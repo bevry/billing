@@ -1,0 +1,21 @@
+sudo: false
+language: node_js
+node_js:
+  - '8'
+matrix:
+  fast_finish: true
+  allow_failures: []
+cache: yarn
+install:
+  - >-
+    eval "$(curl -fsSL
+    https://raw.githubusercontent.com/bevry/awesome-travis/2d86ca6ebe8730048750eeeb3845e8857dc89aa0/scripts/node-install.bash)"
+before_script:
+  - >-
+    eval "$(curl -fsSL
+    https://raw.githubusercontent.com/bevry/awesome-travis/2d86ca6ebe8730048750eeeb3845e8857dc89aa0/scripts/node-verify.bash)"
+notifications:
+  email:
+    recipients:
+      secure: >-
+        mrQ5agOxA2RAu+6OfoOypY8kH53fMtnfbZnmfxEQFEi74LE9ZzbMGFPDirj5uhQF0PlmXyATlX4vDr0x84Kpli3RzJ/qTFwE7p5vCfu14EKozMVCimlUJ0D5VAnXbHSmPeIbLvifWQvlTXqw02lF/IfN0Pb1g3hW63UwYuIiwtLKGxS9VROjPgS4EGmbhlb0bskjDRibK7GCPlC3lYwk0NlJTwZGFlf55FK85j0MT6OOS2s1UTfLSxo6FtriRHxi6/Wr5vJA9V5wEVCr9hhl/aIkr34JBE3x6i7ApIfIhAMncvl6SgZdUXtfQLB5Ji6ub0xjLziK9Q4WFxsw15E4w/GsdkAkmBmMzR9QZDekNDdNbcuX289ceNxAf9eLdUayIm79lTjjQFD7rqPQpXf+I46CyxS97OmbFi6KuIeUewmJ70pR6ZvHqzBRj5IZNDlScSjgVw9Hv/romWdE2h488umIpCwmwDU5F/CsMgElsEwuDnlZyEfjxqYq3PJE4kHGFs0GC/ObjvIsEywK3eH3NEpH7nTUAFIXuGJikHHmaLLRDLmvo/VvQDMgx9GMZrMihiYzID0T3tQ9y3x5MTcG9LOjpu6n5ZrQQbfSraUtY39VWkWhiLr1Yr8XAqNz7JcwG4XSMVikxLrpttGeSDu3gPL/KBnJaZ6wwPfLFAdFYy0=

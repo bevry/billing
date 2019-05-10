@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "removeComments": true,
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "maxNodeModuleJsDepth": 5,
+    "lib": ["esnext", "webworker"],
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node"
+  }
+}

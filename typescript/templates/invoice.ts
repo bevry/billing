@@ -1,0 +1,216 @@
+import { html, nothing } from '/vendor/lit-html.js'
+import { Invoice, Database } from '../types'
+import renderEntity from './entity.js'
+// import terms from '../data/entities'
+
+function currency(amount: number, currency: string) {
+	const currencyFormatter = new Intl.NumberFormat('en-US', {
+		style: 'currency',
+		currency
+	})
+	return currencyFormatter.format(amount) + currency.toUpperCase()
+}
+
+export default (db: Database, invoice: Invoice) => {
+	const provider = db.entities[invoice.provider]
+	const client = db.entities[invoice.client]
+	const services = invoice.services.map(value => db.services[value])
+
+	const now = new Date()
+
+	const due: Date | null =
+		typeof invoice.due === 'string'
+			? new Date(invoice.due)
+			: Array.isArray(invoice.due)
+			? now /* @todo */
+			: null
+	const paid: Date | boolean =
+		typeof invoice.paid === 'string'
+			? new Date(invoice.paid)
+			: Boolean(invoice.paid)
+	const issued = new Date(invoice.issued)
+
+	const remaining = (invoice.payments || []).reduce(
+		(pv, cv) => pv + cv.amount,
+		0
+	)
+
+	const type = invoice.type === 'quote' ? 'quote' : 'invoice'
+	const fullType = invoice.type === 'quote' ? 'Quote' : 'Tax Invoice'
+	const shortType = invoice.type === 'quote' ? 'Quote' : 'Invoice'
+
+	return html`
+		<article class="invoice">
+			<head>
+				<title>
+					${fullType} #${invoice.id} - ${client.name} - ${invoice.project.name}
+				</title>
+			</head>
+
+			<section>
+				<h1>
+					${fullType}
+					<em>#${invoice.id}: ${client.name} - ${invoice.project.name}</em>
+				</h1>
+			</section>
+
+			<section>
+				<h2>Service Provider (Contractor)</h2>
+				${renderEntity(provider)}
+			</section>
+
+			<section>
+				<h2>Service Receiver (Client)</h2>
+				${renderEntity(client)}
+			</section>
+
+			<section>
+				<h2>Project Details</h2>
+				<table>
+					<tbody>
+						<tr>
+							<th>Project Name</th>
+							<td>${invoice.project.name}</td>
+						</tr>
+
+						<tr>
+							<th>Project Services</th>
+							<td>
+								${services.map(
+									v =>
+										html`
+											<div>${v}</div>
+										`
+								)}
+							</td>
+						</tr>
+
+						${invoice.project.note
+							? html`
+									<tr>
+										<th>Project Note</th>
+										<td>${invoice.project.note}</td>
+									</tr>
+							  `
+							: nothing}
+					</tbody>
+				</table>
+			</section>
+
+			<section>
+				<h2>${shortType} Details</h2>
+				<table>
+					<tbody>
+						<tr>
+							<th>${shortType} Issued</th>
+							<td>${issued}</td>
+						</tr>
+
+						<tr>
+							<th>${shortType} Amount</th>
+							<td>
+								${currency(invoice.amount, invoice.currency)}
+								${invoice.gst
+									? `(includes the required ${currency(
+											invoice.amount * 0.1,
+											invoice.currency
+									  )} for the Australian Goods & Services Tax)`
+									: nothing}
+							</td>
+						</tr>
+
+						${type === 'invoice' && invoice.payments && invoice.payments.length
+							? html`
+									<tr>
+										<th>Invoice Payments</th>
+										<td>
+											${invoice.payments.map(
+												(v, i) => html`
+													<div>
+														${currency(
+															v.amount,
+															v.currency || invoice.currency
+														)}
+														on ${v.date} ${v.from ? ` from ${v.from}` : nothing}
+													</div>
+												`
+											)}
+											${invoice.paid
+												? html`
+														<div class="payment-complete">
+															Invoice payment complete
+														</div>
+												  `
+												: html`
+														<div class="payment-incomplete">
+															Invoice awaiting
+															${remaining
+																? `payment of remaining ${currency(
+																		remaining,
+																		invoice.currency
+																  )}`
+																: invoice.payments && invoice.payments.length
+																? 'complete payment'
+																: 'initial payment'}
+														</div>
+												  `}
+										</td>
+									</tr>
+							  `
+							: nothing}
+						${due
+							? html`
+									<tr>
+										<th>${shortType} Due</th>
+										<td>
+											${due}${now >= due
+												? html`
+														<br />Complete payment is overdue
+												  `
+												: nothing}
+										</td>
+									</tr>
+							  `
+							: nothing}
+						${invoice.note
+							? html`
+									<tr>
+										<th>${shortType} Note</th>
+										<td>${invoice.note}</td>
+									</tr>
+							  `
+							: nothing}
+						${type === 'invoice' && !invoice.paid
+							? html`
+									<tr>
+										<th>Payment Options</th>
+										<td>
+											<a href="https://bevry.me/payment">
+												https://bevry.me/payment
+											</a>
+										</td>
+									</tr>
+							  `
+							: nothing}
+					</tbody>
+				</table>
+			</section>
+		</article>
+	`
+}
+
+/*
+			${invoice.terms &&
+				html`
+					<section>
+						<h2>${shortType} Terms</h2>
+						<ol>
+							${invoice.terms.map(
+								(v, i) =>
+									html`
+										<li>${v}</li>
+									`
+							)}
+						</ol>
+					</section>
+				`}*/
