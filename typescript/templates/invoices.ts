@@ -1,13 +1,38 @@
-import { html } from '/vendor/lit-html.js'
+import { html, nothing } from '/vendor/lit-html.js'
 import { Database } from '../types'
 import { goto } from '../util.js'
 import renderError from './error.js'
+import { Invoice } from '../types'
+import Daet from '/vendor/daet.js'
 
-export default ({ invoices, entities, login }: Database) => {
+function renderInvoices({ entities }: Database, invoices: Invoice[]) {
+	return invoices.map(
+		invoice => html`
+			<li>
+				<a href="?invoice=${invoice.id}" @click=${goto}>
+					#${invoice.id}: ${entities[invoice.client].name} -
+					${invoice.project.name}
+				</a>
+			</li>
+		`
+	)
+}
+
+export default (database: Database) => {
+	const { invoices, entities, login } = database
 	const user = Object.values(entities).find(
 		user => user.contact.email === login
 	)
 	document.title = 'Bevry Billing'
+	const sorted = Object.values(invoices).sort((b, a) =>
+		new Daet(a.issued).getMillisecondsFrom(new Daet(b.issued))
+	)
+	const paid: Invoice[] = []
+	const unpaid: Invoice[] = []
+	for (const invoice of sorted) {
+		if (invoice.paid) paid.push(invoice)
+		else unpaid.push(invoice)
+	}
 	return html`
 		<article class="invoices">
 			<section>
@@ -15,18 +40,28 @@ export default ({ invoices, entities, login }: Database) => {
 					Welcome ${user ? user.name : 'developer'},<br />here are your invoices
 				</h1>
 			</section>
-			<ul>
-				${Object.values(invoices).map(
-					invoice => html`
-						<li>
-							<a href="?invoice=${invoice.id}" @click=${goto}>
-								#${invoice.id}: ${entities[invoice.client].name} -
-								${invoice.project.name}
-							</a>
-						</li>
-					`
-				)}
-			</ul>
+			${unpaid.length
+				? html`
+			<section>
+				<h2>
+					Unpaid invoices
+				</h1>
+				<ul>
+					${renderInvoices(database, unpaid)}
+				</ul>
+			</section>`
+				: nothing}
+			${unpaid.length
+				? html`
+				<section>
+					<h2>
+						Paid invoices
+					</h1>
+					<ul>
+						${renderInvoices(database, paid)}
+					</ul>
+				</section>`
+				: nothing}
 		</article>
 	`
 }

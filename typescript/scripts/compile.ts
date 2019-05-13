@@ -1,5 +1,6 @@
 import * as fsUtil from 'fs'
 import * as pathUtil from 'path'
+import Daet from 'daet'
 
 import { Invoice } from '../types'
 
@@ -11,8 +12,18 @@ import terms from '../data/terms'
 const data = { entities, invoices, services, terms }
 const path = pathUtil.resolve(process.cwd(), 'www', 'index.json')
 
+function invalidDate(d: string) {
+	return isNaN(new Daet(d).getTime())
+}
 // verify / compile
 Object.values(invoices).forEach(invoice => {
+	// ensure valid date
+	if (invoice.issued && invalidDate(invoice.issued)) {
+		throw new Error(
+			`invoice ${invoice.id} issued [${invoice.issued}] is an invalid date`
+		)
+	}
+
 	// determine/confirm amount
 	if (invoice.rate) {
 		// prepare
