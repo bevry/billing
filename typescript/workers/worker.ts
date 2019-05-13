@@ -13,26 +13,28 @@ async function handler(request: FetchEvent['request']) {
 		return fetch(request)
 			.then(data => data.json())
 			.then((data: Database) => {
-				const whitelistedEntities: Entities = {}
+				// entities for the currently logged in user
+				const user: Entities = {}
+				// entities for invoices associated with the currently logged in user
+				const entities: Entities = {}
 				Object.keys(data.entities).forEach(id => {
 					const entity = data.entities[id]
-					if (entity.contact.email === email) whitelistedEntities[id] = entity
+					if (entity.contact.email === email) user[id] = entity
 				})
-				const whitelistedInvoices: Invoices = {}
+				// store invoices associated associated with the currently logged in user
+				const invoices: Invoices = {}
 				Object.keys(data.invoices).forEach(id => {
 					const invoice = data.invoices[id]
-					if (
-						whitelistedEntities[invoice.provider] ||
-						whitelistedEntities[invoice.client]
-					) {
-						whitelistedInvoices[id] = invoice
-						whitelistedEntities[invoice.provider] =
-							data.entities[invoice.provider]
-						whitelistedEntities[invoice.client] = data.entities[invoice.client]
+					if (user[invoice.provider] || user[invoice.client]) {
+						// add this invoice that is associated with the currently logged in user
+						invoices[id] = invoice
+						// add these entities that are associated with this invoice
+						entities[invoice.provider] = data.entities[invoice.provider]
+						entities[invoice.client] = data.entities[invoice.client]
 					}
 				})
-				data.entities = whitelistedEntities
-				data.invoices = whitelistedInvoices
+				data.entities = entities
+				data.invoices = invoices
 				return new Response(JSON.stringify(data), {
 					status: 200,
 					statusText: 'OK',
