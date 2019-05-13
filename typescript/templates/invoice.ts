@@ -206,7 +206,7 @@ export default (db: Database, invoice: Invoice) => {
 							<h2>${shortType} Items</h2>
 							<table>
 								<tr>
-									<td colspan="2">
+									<td colspan="2" class="w100">
 										<ol class="items">
 											${invoice.items.map(
 												item =>

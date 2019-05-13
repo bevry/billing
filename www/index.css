@@ -60,9 +60,16 @@ th,
 td {
 	padding: 0 2%;
 }
+
+.w100 {
+	width: 100%;
+}
+.wfit {
+	width: fit-content;
+}
 .items {
+	padding: 0;
 	margin: 0 auto;
-	display: block;
 	width: fit-content;
 	text-align: justify;
 }
@@ -140,7 +147,7 @@ article em {
 		text-decoration: inherit !important;
 	}
 
-	article.invoice {
+	article {
 		border: none;
 		box-shadow: none;
 	}
@@ -156,6 +163,11 @@ article em {
 	}
 	section:last-child {
 		margin-bottom: 0;
+	}
+
+	/* fix print issue */
+	.items li {
+		width: 110%;
 	}
 }
 
