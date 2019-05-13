@@ -18,5 +18,5 @@
       "/vendor/*.js": ["../node_modules/*"]
     }
   },
-  "exclude": ["scripts", "workers", "base"]
+  "exclude": ["scripts", "workers", "base", "data"]
 }
