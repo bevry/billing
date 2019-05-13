@@ -3,6 +3,7 @@ import { Invoice, Database } from '../types'
 import renderNav from './nav.js'
 import renderEntity from './entity.js'
 import Daet from '/vendor/daet.js'
+import invoices from './invoices'
 
 function renderDate(date: Daet) {
 	return date.format('en', {
@@ -12,7 +13,7 @@ function renderDate(date: Daet) {
 	})
 }
 
-function currency(amount: number, currency: string) {
+function renderCurrency(amount: number, currency: string) {
 	const currencyFormatter = new Intl.NumberFormat('en-US', {
 		style: 'currency',
 		currencyDisplay: 'code',
@@ -39,6 +40,7 @@ export default (db: Database, invoice: Invoice) => {
 			? new Daet(invoice.paid)
 			: Boolean(invoice.paid)
 	const issued = new Daet(invoice.issued)
+	const overdue = due && due.getMillisecondsFromNow() < 0
 
 	const type = invoice.type === 'quote' ? 'quote' : 'invoice'
 	const fullType = invoice.type === 'quote' ? 'Quote' : 'Tax Invoice'
@@ -115,7 +117,8 @@ export default (db: Database, invoice: Invoice) => {
 									<tr>
 										<th>${shortType} Due</th>
 										<td>
-											${renderDate(due)}${due.getMillisecondsFromNow() < 0
+											${renderDate(due)}
+											${overdue
 												? html`
 														<br />Complete payment is overdue
 												  `
@@ -128,9 +131,9 @@ export default (db: Database, invoice: Invoice) => {
 						<tr>
 							<th>${shortType} Amount</th>
 							<td>
-								${currency(invoice.amount, invoice.currency)}
+								${renderCurrency(invoice.amount, invoice.currency)}
 								${invoice.gst
-									? `(includes the required ${currency(
+									? `(includes the required ${renderCurrency(
 											invoice.amount * 0.1,
 											invoice.currency
 									  )} for the Australian Goods & Services Tax)`
@@ -138,7 +141,7 @@ export default (db: Database, invoice: Invoice) => {
 							</td>
 						</tr>
 
-						${type === 'invoice' && invoice.payments && invoice.payments.length
+						${invoice.payments && invoice.payments.length
 							? html`
 									<tr>
 										<th>Invoice Payments</th>
@@ -146,7 +149,7 @@ export default (db: Database, invoice: Invoice) => {
 											${invoice.payments.map(
 												(v, i) => html`
 													<div>
-														${currency(
+														${renderCurrency(
 															v.amount,
 															v.currency || invoice.currency
 														)}
@@ -173,15 +176,7 @@ export default (db: Database, invoice: Invoice) => {
 									</tr>
 							  `
 							: nothing}
-						${invoice.note
-							? html`
-									<tr>
-										<th>${shortType} Note</th>
-										<td>${invoice.note}</td>
-									</tr>
-							  `
-							: nothing}
-						${type === 'invoice' && !invoice.paid
+						${invoice.paid === false
 							? html`
 									<tr>
 										<th>Payment Options</th>
@@ -193,9 +188,42 @@ export default (db: Database, invoice: Invoice) => {
 									</tr>
 							  `
 							: nothing}
+						${invoice.note
+							? html`
+									<tr>
+										<th>${shortType} Note</th>
+										<td>${invoice.note}</td>
+									</tr>
+							  `
+							: nothing}
 					</tbody>
 				</table>
 			</section>
+
+			${invoice.items
+				? html`
+						<section>
+							<h2>${shortType} Items</h2>
+							<table>
+								<tr>
+									<td colspan="2">
+										<ol class="items">
+											${invoice.items.map(
+												item =>
+													html`
+														<li>
+															${renderCurrency(item.amount, invoice.currency)}
+															for ${item.name}
+														</li>
+													`
+											)}
+										</ol>
+									</td>
+								</tr>
+							</table>
+						</section>
+				  `
+				: nothing}
 		</article>
 	`
 }

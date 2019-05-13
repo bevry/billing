@@ -60,6 +60,12 @@ th,
 td {
 	padding: 0 2%;
 }
+.items {
+	margin: 0 auto;
+	display: block;
+	width: fit-content;
+	text-align: justify;
+}
 
 article {
 	margin: 10vh 10vw;

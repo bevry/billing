@@ -50,21 +50,25 @@ export interface InvoiceBase {
 	hours?: number
 	days?: string[] | number
 	weeks?: string[] | number
-	extras?: Array<{
+	extras?: {
 		name: string
 		multiplier: number
-	}>
+	}[]
 	rate?: {
 		amount: number
 		each: string
 	}
 	type?: string
-	payments?: Array<{
+	payments?: {
 		date: string
 		amount: number
 		from?: string
 		currency?: string
-	}>
+	}[]
+	items?: {
+		name: string
+		amount: number
+	}[]
 	note?: string
 	gst?: boolean
 }
