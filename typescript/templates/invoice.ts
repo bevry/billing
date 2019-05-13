@@ -40,7 +40,7 @@ export default (db: Database, invoice: Invoice) => {
 			? new Daet(invoice.paid)
 			: Boolean(invoice.paid)
 	const issued = new Daet(invoice.issued)
-	const overdue = due && due.getMillisecondsFromNow() < 0
+	const overdue = due && due.getMillisecondsFromNow() > 0
 
 	const type = invoice.type === 'quote' ? 'quote' : 'invoice'
 	const fullType = invoice.type === 'quote' ? 'Quote' : 'Tax Invoice'
@@ -120,7 +120,9 @@ export default (db: Database, invoice: Invoice) => {
 											${renderDate(due)}
 											${overdue
 												? html`
-														<br />Complete payment is overdue
+														<div class="payment-overdue">
+															Complete payment is overdue
+														</div>
 												  `
 												: nothing}
 										</td>
@@ -141,23 +143,25 @@ export default (db: Database, invoice: Invoice) => {
 							</td>
 						</tr>
 
-						${invoice.payments && invoice.payments.length
+						${type === 'invoice'
 							? html`
 									<tr>
 										<th>Invoice Payments</th>
 										<td>
-											${invoice.payments.map(
-												(v, i) => html`
-													<div>
-														${renderCurrency(
-															v.amount,
-															v.currency || invoice.currency
-														)}
-														on ${renderDate(new Daet(v.date))}
-														${v.from ? ` from ${v.from}` : nothing}
-													</div>
-												`
-											)}
+											${invoice.payments && invoice.payments.length
+												? invoice.payments.map(
+														(v, i) => html`
+															<div>
+																${renderCurrency(
+																	v.amount,
+																	v.currency || invoice.currency
+																)}
+																on ${renderDate(new Daet(v.date))}
+																${v.from ? ` from ${v.from}` : nothing}
+															</div>
+														`
+												  )
+												: nothing}
 											${invoice.paid
 												? html`
 														<div class="payment-complete">

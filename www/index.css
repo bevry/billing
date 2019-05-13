@@ -116,8 +116,9 @@ article em {
 	text-decoration: underline;
 }
 .payment-incomplete {
-	color: rgb(227, 147, 0);
+	color: orangered;
 	font-weight: bold;
+	text-decoration: underline;
 }
 .payment-overdue {
 	color: red;
