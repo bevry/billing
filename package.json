@@ -90,6 +90,8 @@
     "our:compile:typescript": "pushd typescript/ && tsc && popd",
     "our:compile:data": "ts-node ./typescript/scripts/compile.ts",
     "our:compile:modules": "pika-web --clean --optimize --dest www/vendor",
+    "our:watch": "yarn run our:watch:typescript",
+    "our:watch:typescript": "pushd typescript/ && tsc --watch && popd",
     "our:deploy": "echo no need for this project",
     "our:meta": "yarn run our:meta:projectz",
     "our:meta:projectz": "projectz compile",

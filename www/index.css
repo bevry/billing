@@ -64,6 +64,13 @@ td {
 article {
 	margin: 10vh 10vw;
 }
+article.error {
+	padding: 10vh 10vw;
+}
+article.invoices {
+	padding: 0 5vw;
+	padding-bottom: 5vh;
+}
 
 section {
 	margin: 3rem 2rem;
@@ -81,12 +88,12 @@ body {
 /* ================================================ */
 /* INVOICE STYLES */
 
-article.invoice {
+article {
 	background: white;
 	border: 1px solid rgba(0, 0, 0, 0.15);
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
-article.invoice em {
+article em {
 	display: block;
 }
 

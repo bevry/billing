@@ -1,5 +1,6 @@
 import { html, nothing } from '/vendor/lit-html.js'
 import { Invoice, Database } from '../types'
+import renderNav from './nav.js'
 import renderEntity from './entity.js'
 // import terms from '../data/entities'
 
@@ -39,14 +40,13 @@ export default (db: Database, invoice: Invoice) => {
 	const fullType = invoice.type === 'quote' ? 'Quote' : 'Tax Invoice'
 	const shortType = invoice.type === 'quote' ? 'Quote' : 'Invoice'
 
-	return html`
-		<article class="invoice">
-			<head>
-				<title>
-					${fullType} #${invoice.id} - ${client.name} - ${invoice.project.name}
-				</title>
-			</head>
+	document.title = `${fullType} #${invoice.id} - ${client.name} - ${
+		invoice.project.name
+	}`
 
+	return html`
+		${renderNav()}
+		<article class="invoice">
 			<section>
 				<h1>
 					${fullType}
