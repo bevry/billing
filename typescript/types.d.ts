@@ -75,6 +75,7 @@ export interface Invoices {
 }
 
 export interface Database {
+	login?: string
 	entities: Entities
 	invoices: Invoices
 	services: Services

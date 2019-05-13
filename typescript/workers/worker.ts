@@ -35,6 +35,7 @@ async function handler(request: FetchEvent['request']) {
 				})
 				data.entities = entities
 				data.invoices = invoices
+				data.login = email
 				return new Response(JSON.stringify(data), {
 					status: 200,
 					statusText: 'OK',

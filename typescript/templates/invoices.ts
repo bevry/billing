@@ -1,15 +1,18 @@
 import { html } from '/vendor/lit-html.js'
 import { Database } from '../types'
 import { goto } from '../util.js'
+import renderError from './error.js'
 
-export default ({ invoices, entities }: Database) => {
+export default ({ invoices, entities, login }: Database) => {
+	const user = Object.values(entities).find(
+		user => user.contact.email === login
+	)
 	document.title = 'Bevry Billing'
 	return html`
 		<article class="invoices">
 			<section>
 				<h1>
-					Welcome ${Object.values(entities)[0].name},<br />here are your
-					invoices
+					Welcome ${user ? user.name : 'developer'},<br />here are your invoices
 				</h1>
 			</section>
 			<ul>
