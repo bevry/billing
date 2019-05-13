@@ -7,9 +7,10 @@ import renderEntity from './entity.js'
 function currency(amount: number, currency: string) {
 	const currencyFormatter = new Intl.NumberFormat('en-US', {
 		style: 'currency',
+		currencyDisplay: 'code',
 		currency
 	})
-	return currencyFormatter.format(amount) + currency.toUpperCase()
+	return currencyFormatter.format(amount)
 }
 
 export default (db: Database, invoice: Invoice) => {
@@ -30,11 +31,6 @@ export default (db: Database, invoice: Invoice) => {
 			? new Date(invoice.paid)
 			: Boolean(invoice.paid)
 	const issued = new Date(invoice.issued)
-
-	const remaining = (invoice.payments || []).reduce(
-		(pv, cv) => pv + cv.amount,
-		0
-	)
 
 	const type = invoice.type === 'quote' ? 'quote' : 'invoice'
 	const fullType = invoice.type === 'quote' ? 'Quote' : 'Tax Invoice'
@@ -144,12 +140,7 @@ export default (db: Database, invoice: Invoice) => {
 												: html`
 														<div class="payment-incomplete">
 															Invoice awaiting
-															${remaining
-																? `payment of remaining ${currency(
-																		remaining,
-																		invoice.currency
-																  )}`
-																: invoice.payments && invoice.payments.length
+															${invoice.payments
 																? 'complete payment'
 																: 'initial payment'}
 														</div>
@@ -200,6 +191,18 @@ export default (db: Database, invoice: Invoice) => {
 }
 
 /*
+
+	const remaining = (invoice.payments || []).reduce(
+		(remaining, payment) => remaining - payment.amount,
+		invoice.amount
+	)
+remaining
+																? `payment of remaining ${currency(
+																		remaining,
+																		invoice.currency
+																  )}`
+																:
+
 			${invoice.terms &&
 				html`
 					<section>
