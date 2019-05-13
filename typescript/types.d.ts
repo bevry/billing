@@ -1,3 +1,5 @@
+import { ArithmeticUnits } from '/vendor/daet.js'
+
 export interface Services {
 	[key: string]: string
 }
@@ -43,7 +45,7 @@ export interface InvoiceBase {
 	project: string | Project
 	issued: string
 	paid?: string | null | boolean
-	due?: string | [number, string]
+	due?: string | [number, ArithmeticUnits]
 
 	hours?: number
 	days?: string[] | number

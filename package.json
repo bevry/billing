@@ -71,12 +71,12 @@
     "@pika/web": "^0.4.2",
     "@types/hyperscript": "^0.0.3",
     "@types/node": "^12.0.0",
-    "@typescript-eslint/eslint-plugin": "^1.7.0",
-    "@typescript-eslint/parser": "^1.7.0",
+    "@typescript-eslint/eslint-plugin": "^1.9.0",
+    "@typescript-eslint/parser": "^1.9.0",
     "eslint": "^5.16.0",
     "eslint-config-bevry": "^1.2.0",
     "eslint-config-prettier": "^4.2.0",
-    "eslint-plugin-prettier": "^3.0.1",
+    "eslint-plugin-prettier": "^3.1.0",
     "prettier": "^1.17.0",
     "projectz": "^1.7.4",
     "serve": "^11.0.0",
@@ -119,8 +119,7 @@
   },
   "dependencies": {
     "currency-formatter": "^1.5.3",
-    "daet": "^1.0.2",
-    "haunted": "^4.2.1",
+    "daet": "^1.2.0",
     "lit-html": "^1.0.0"
   },
   "contributors": [

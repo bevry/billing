@@ -2,7 +2,15 @@ import { html, nothing } from '/vendor/lit-html.js'
 import { Invoice, Database } from '../types'
 import renderNav from './nav.js'
 import renderEntity from './entity.js'
-// import terms from '../data/entities'
+import Daet from '/vendor/daet.js'
+
+function renderDate(date: Daet) {
+	return date.format('en', {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric'
+	})
+}
 
 function currency(amount: number, currency: string) {
 	const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -18,19 +26,19 @@ export default (db: Database, invoice: Invoice) => {
 	const client = db.entities[invoice.client]
 	const services = invoice.services.map(value => db.services[value])
 
-	const now = new Date()
+	const now = new Daet()
 
-	const due: Date | null =
+	const due: Daet | null =
 		typeof invoice.due === 'string'
-			? new Date(invoice.due)
+			? new Daet(invoice.due)
 			: Array.isArray(invoice.due)
-			? now /* @todo */
+			? new Daet().plus(invoice.due[0], invoice.due[1])
 			: null
-	const paid: Date | boolean =
+	const paid: Daet | boolean =
 		typeof invoice.paid === 'string'
-			? new Date(invoice.paid)
+			? new Daet(invoice.paid)
 			: Boolean(invoice.paid)
-	const issued = new Date(invoice.issued)
+	const issued = new Daet(invoice.issued)
 
 	const type = invoice.type === 'quote' ? 'quote' : 'invoice'
 	const fullType = invoice.type === 'quote' ? 'Quote' : 'Tax Invoice'
@@ -99,8 +107,23 @@ export default (db: Database, invoice: Invoice) => {
 					<tbody>
 						<tr>
 							<th>${shortType} Issued</th>
-							<td>${issued}</td>
+							<td>${renderDate(issued)}</td>
 						</tr>
+
+						${!invoice.paid && due
+							? html`
+									<tr>
+										<th>${shortType} Due</th>
+										<td>
+											${renderDate(due)}${due.getMillisecondsFromNow() < 0
+												? html`
+														<br />Complete payment is overdue
+												  `
+												: nothing}
+										</td>
+									</tr>
+							  `
+							: nothing}
 
 						<tr>
 							<th>${shortType} Amount</th>
@@ -127,7 +150,8 @@ export default (db: Database, invoice: Invoice) => {
 															v.amount,
 															v.currency || invoice.currency
 														)}
-														on ${v.date} ${v.from ? ` from ${v.from}` : nothing}
+														on ${renderDate(new Daet(v.date))}
+														${v.from ? ` from ${v.from}` : nothing}
 													</div>
 												`
 											)}
@@ -145,20 +169,6 @@ export default (db: Database, invoice: Invoice) => {
 																: 'initial payment'}
 														</div>
 												  `}
-										</td>
-									</tr>
-							  `
-							: nothing}
-						${due
-							? html`
-									<tr>
-										<th>${shortType} Due</th>
-										<td>
-											${due}${now >= due
-												? html`
-														<br />Complete payment is overdue
-												  `
-												: nothing}
 										</td>
 									</tr>
 							  `
