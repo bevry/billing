@@ -51,7 +51,7 @@ export default (database: Database) => {
 				</ul>
 			</section>`
 				: nothing}
-			${unpaid.length
+			${paid.length
 				? html`
 				<section>
 					<h2>
