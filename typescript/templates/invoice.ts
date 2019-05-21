@@ -29,18 +29,18 @@ export default (db: Database, invoice: Invoice) => {
 
 	const now = new Daet()
 
+	const issued = new Daet(invoice.issued)
 	const due: Daet | null =
 		typeof invoice.due === 'string'
 			? new Daet(invoice.due)
 			: Array.isArray(invoice.due)
-			? new Daet().plus(invoice.due[0], invoice.due[1])
+			? issued.plus(invoice.due[0], invoice.due[1])
 			: null
 	const paid: Daet | boolean =
 		typeof invoice.paid === 'string'
 			? new Daet(invoice.paid)
 			: Boolean(invoice.paid)
-	const issued = new Daet(invoice.issued)
-	const overdue = due && due.getMillisecondsFromNow() > 0
+	const overdue = due && due.getMillisecondsFromNow() < 0
 
 	const type = invoice.type === 'quote' ? 'quote' : 'invoice'
 	const fullType = invoice.type === 'quote' ? 'Quote' : 'Tax Invoice'
