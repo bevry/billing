@@ -95,8 +95,17 @@ Object.values(invoices).forEach(invoice => {
 				total += amount
 			}
 		}
+		// add items
+		if (invoice.items) {
+			for (const item of invoice.items) {
+				items.push(item)
+				total += item.amount
+			}
+		}
 		// verify
-		if (Math.round(invoice.amount) !== Math.round(total)) {
+		if (invoice.amount === 0) {
+			invoice.amount = total
+		} else if (Math.round(invoice.amount) !== Math.round(total)) {
 			throw new Error(
 				`invoice ${
 					invoice.id
