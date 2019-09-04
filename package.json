@@ -92,7 +92,7 @@
     "our:compile:modules": "pika-web --clean --optimize --dest www/vendor",
     "our:watch": "yarn run our:watch:typescript",
     "our:watch:typescript": "pushd typescript/ && tsc --watch && popd",
-    "our:deploy": "echo no need for this project",
+    "our:deploy": "yarn run deploy",
     "our:meta": "yarn run our:meta:projectz",
     "our:meta:projectz": "projectz compile",
     "our:release": "yarn run our:release:prepare && yarn our:release:push",
@@ -106,7 +106,8 @@
     "our:verify:stylelint": "echo 'disabled due to https://spectrum.chat/zeit/general/resolved-deployments-fail-with-enospc-no-space-left-on-device-write~d1b9f61a-65e8-42a3-9042-f9c6a6fae6fd'",
     "test": "echo no need for this project",
     "start": "yarn run our:clean && yarn run our:compile && serve ./www/",
-    "prepare": "yarn run our:compile:modules"
+    "prepare": "yarn run our:compile:modules",
+    "deploy": "yarn run our:release:prepare && surge www/ billing.bevry.me"
   },
   "eslintConfig": {
     "extends": [
@@ -120,7 +121,8 @@
   "dependencies": {
     "currency-formatter": "^1.5.3",
     "daet": "^1.2.0",
-    "lit-html": "^1.0.0"
+    "lit-html": "^1.0.0",
+    "surge": "^0.21.3"
   },
   "contributors": [
     "Benjamin Lupton (http://balupton.com)"
