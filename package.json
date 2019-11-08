@@ -68,7 +68,7 @@
   ],
   "type": "module",
   "devDependencies": {
-    "@pika/web": "^0.4.2",
+    "@pika/web": "^0.6.1",
     "@types/hyperscript": "^0.0.3",
     "@types/node": "^12.0.0",
     "@typescript-eslint/eslint-plugin": "^1.9.0",
