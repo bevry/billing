@@ -77,7 +77,7 @@
     "eslint-config-bevry": "^1.2.0",
     "eslint-config-prettier": "^4.2.0",
     "eslint-plugin-prettier": "^3.1.0",
-    "prettier": "^1.17.0",
+    "prettier": "^1.19.1",
     "projectz": "^1.7.4",
     "serve": "^11.0.0",
     "simplytyped": "^3.1.0",
