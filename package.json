@@ -119,7 +119,7 @@
     "singleQuote": true
   },
   "dependencies": {
-    "currency-formatter": "^1.5.3",
+    "currency-formatter": "^1.5.5",
     "daet": "^1.2.0",
     "lit-html": "^1.0.0",
     "surge": "^0.21.3"
