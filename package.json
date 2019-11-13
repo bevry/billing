@@ -121,7 +121,7 @@
   "dependencies": {
     "currency-formatter": "^1.5.3",
     "daet": "^1.2.0",
-    "lit-html": "^1.0.0",
+    "lit-html": "^1.1.2",
     "surge": "^0.21.3"
   },
   "contributors": [
