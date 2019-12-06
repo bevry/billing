@@ -1,8 +1,7 @@
 import { html, nothing } from '/vendor/lit-html.js'
-import { Database } from '../types'
+import { Database, Invoice } from '../types'
 import { goto } from '../util.js'
 import renderError from './error.js'
-import { Invoice } from '../types'
 import Daet from '/vendor/daet.js'
 
 function renderInvoices({ entities }: Database, invoices: Invoice[]) {
