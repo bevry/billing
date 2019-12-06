@@ -137,7 +137,8 @@
   },
   "boundation": {
     "tsconfig": "typescript/tsconfig.json",
-    "deployTarget": "billing.bevry.me"
+    "deployTarget": "billing.bevry.me",
+    "travisWebsite": false
   },
   "stylelint": {
     "extends": [

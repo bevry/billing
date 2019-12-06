@@ -12,7 +12,7 @@ const invoices: Invoices = {
 		},
 		issued: '2000-01-01',
 		paid: false,
-		due: [2, 'weeks']
+		due: [2, 'week']
 	}
 }
 export default Invoices
