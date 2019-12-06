@@ -98,7 +98,7 @@
   },
   "scripts": {
     "my:clean:typescript": "rm -Rf ./javascript ./www/scripts",
-    "my:compile:data": "tsc --project ./typescript/scripts/tsconfig.json && node ./javascript/scripts/compile.js && npm run my:clean:typescript",
+    "my:compile:data": "mkdir -p ./typescript/data && cp -n ./typescript/base/* ./typescript/data/ || true && tsc --project ./typescript/scripts/tsconfig.json && node ./javascript/scripts/compile.js && npm run my:clean:typescript",
     "my:compile:modules": "pika-web --clean --optimize --dest www/vendor",
     "my:compile:typescript": "tsc --project ./typescript/tsconfig.json",
     "my:deploy": "surge ./www billing.bevry.me",
