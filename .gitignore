@@ -43,6 +43,8 @@ docs/
 # =====================================
 # CUSTOM
 
+javscript/
+typescript/**/*.js
 typescript/data
 www/scripts
 www/vendor

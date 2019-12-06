@@ -5,9 +5,15 @@
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "maxNodeModuleJsDepth": 5,
-    "lib": ["esnext"],
-    "target": "esnext",
-    "module": "commonjs",
-    "moduleResolution": "node"
-  }
+    "lib": ["ESNext", "DOM"],
+    "target": "ESNext",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "baseUrl": ".",
+    "paths": {
+      "/vendor/*.js": ["../../node_modules/*"]
+    },
+    "outDir": "../../javascript"
+  },
+  "include": ["."]
 }

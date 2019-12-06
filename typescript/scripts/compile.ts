@@ -15,6 +15,7 @@ const path = pathUtil.resolve(process.cwd(), 'www', 'index.json')
 function invalidDate(d: string) {
 	return isNaN(new Daet(d).getTime())
 }
+
 // verify / compile
 Object.values(invoices).forEach(invoice => {
 	// ensure valid date
@@ -107,11 +108,7 @@ Object.values(invoices).forEach(invoice => {
 			invoice.amount = total
 		} else if (Math.round(invoice.amount) !== Math.round(total)) {
 			throw new Error(
-				`invoice ${
-					invoice.id
-				} calculated total ${total} is different than invoice amount ${
-					invoice.amount
-				}`
+				`invoice ${invoice.id} calculated total ${total} is different than invoice amount ${invoice.amount}`
 			)
 		}
 		// apply
@@ -122,9 +119,7 @@ Object.values(invoices).forEach(invoice => {
 	if (typeof invoice.paid === 'string') {
 		if (invoice.payments) {
 			throw new Error(
-				`invoice ${
-					invoice.id
-				} has paid=string and payments=truthy, it must have one or the other`
+				`invoice ${invoice.id} has paid=string and payments=truthy, it must have one or the other`
 			)
 		}
 		invoice.payments = [

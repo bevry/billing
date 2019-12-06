@@ -46,9 +46,7 @@ export default (db: Database, invoice: Invoice) => {
 	const fullType = invoice.type === 'quote' ? 'Quote' : 'Tax Invoice'
 	const shortType = invoice.type === 'quote' ? 'Quote' : 'Invoice'
 
-	document.title = `${fullType} #${invoice.id} - ${client.name} - ${
-		invoice.project.name
-	}`
+	document.title = `${fullType} #${invoice.id} - ${client.name} - ${invoice.project.name}`
 
 	return html`
 		${renderNav()}
