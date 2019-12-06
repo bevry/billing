@@ -15,4 +15,4 @@ const invoices: Invoices = {
 		due: [2, 'week']
 	}
 }
-export default Invoices
+export default invoices
