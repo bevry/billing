@@ -17,6 +17,7 @@
     "list": [
       "travisci",
       "---",
+      "githubsponsors",
       "patreon",
       "flattr",
       "liberapay",
@@ -27,6 +28,7 @@
       "wishlist"
     ],
     "config": {
+      "githubSponsorsUsername": "balupton",
       "buymeacoffeeUsername": "balupton",
       "cryptoURL": "https://bevry.me/crypto",
       "flattrUsername": "balupton",
@@ -77,15 +79,15 @@
   "devDependencies": {
     "@pika/web": "^0.6.1",
     "@types/hyperscript": "^0.0.3",
-    "@types/node": "^12.12.14",
-    "@typescript-eslint/eslint-plugin": "^2.10.0",
-    "@typescript-eslint/parser": "^2.10.0",
+    "@types/node": "^12.12.17",
+    "@typescript-eslint/eslint-plugin": "^2.11.0",
+    "@typescript-eslint/parser": "^2.11.0",
     "eslint": "^6.7.2",
-    "eslint-config-bevry": "^2.2.0",
+    "eslint-config-bevry": "^2.3.0",
     "eslint-config-prettier": "^6.7.0",
     "eslint-plugin-prettier": "^3.1.1",
     "prettier": "^1.19.1",
-    "projectz": "^1.14.0",
+    "projectz": "^1.16.0",
     "serve": "^11.2.0",
     "simplytyped": "^3.2.3",
     "stylelint": "^12.0.0",
