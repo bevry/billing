@@ -1,6 +1,7 @@
 import * as fsUtil from 'fs'
 import * as pathUtil from 'path'
 import Daet from 'daet'
+import { cwd } from 'process'
 
 import { Invoice } from '../types'
 
@@ -10,7 +11,7 @@ import services from '../data/services'
 import terms from '../data/terms'
 
 const data = { entities, invoices, services, terms }
-const path = pathUtil.resolve(process.cwd(), 'www', 'index.json')
+const path = pathUtil.resolve(cwd(), 'www', 'index.json')
 
 function invalidDate(d: string) {
 	return isNaN(new Daet(d).getTime())
