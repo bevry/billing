@@ -1,0 +1,219 @@
+---
+import Daet from 'daet'
+import LayoutComponent from '../../../../layouts/Layout.astro'
+import EntityComponent from '../../../../components/Entity.astro'
+import DateComponent from '../../../../components/Date.astro'
+import InvoiceItemsComponent from '../../../../components/InvoiceItems.astro'
+import CurrencyComponent from '../../../../components/Currency.astro'
+import { getDatabase } from '../../../../data/database'
+// @ts-ignore
+import {
+	forbiddenResponse,
+	getInvoiceFullType,
+	getInvoiceShortType,
+	getInvoiceType,
+} from '../../../../util'
+
+// import invoices from '../../data/invoices'
+// export function getStaticPaths() {
+// 	return Object.keys(invoices).map((id) => ({
+// 		params: { invoice: id },
+// 	}))
+// }
+
+// check we are authenticated
+const entityEmail =
+	Astro.request.headers.get('Cf-Access-Authenticated-User-Email') ||
+	Astro.cookies.get('entityEmail')?.value ||
+	null
+if (!entityEmail) return forbiddenResponse('No entity email')
+
+// check invoice
+const invoiceId = Astro.params.invoiceId
+if (!invoiceId) return forbiddenResponse('No invoice id')
+
+// we have the entity id from the url param
+const entityId = Astro.params.entityId
+if (!entityId) return forbiddenResponse('No entity id')
+
+// fetch details for this entity
+const database = getDatabase(entityId, entityEmail)
+const entity = database.entities[entityId]
+const invoice = database.invoices[invoiceId]
+
+// confirm we have results
+if (!entity) return forbiddenResponse('No entity match')
+if (!invoice) return forbiddenResponse('No invoice match')
+
+const provider = database.entities[invoice.provider]
+const client = database.entities[invoice.client]
+const services = invoice.services.map((value) => database.services[value])
+
+const now = new Daet()
+
+const issued = new Daet(invoice.issued)
+const due: Daet | null =
+	typeof invoice.due === 'string'
+		? new Daet(invoice.due)
+		: Array.isArray(invoice.due)
+		? issued.plus(invoice.due[0], invoice.due[1])
+		: null
+const paid: Daet | boolean =
+	typeof invoice.paid === 'string'
+		? new Daet(invoice.paid)
+		: Boolean(invoice.paid)
+const overdue = due && due.getMillisecondsFromNow() < 0
+
+const type = getInvoiceType(invoice)
+const fullType = getInvoiceFullType(invoice)
+const shortType = getInvoiceShortType(invoice)
+---
+
+<LayoutComponent
+	title={`${fullType} #${invoice.id} - ${client.name} - ${invoice.project.name}`}
+	nav={[
+		{
+			href: `/entity/${entityId}`,
+			title: `Invoices for ${entity.name}`,
+			text: '←',
+		},
+	]}
+>
+	<article class="invoice">
+		<section>
+			<h1>
+				{fullType}
+				<em>#{invoice.id}: {client.name} - {invoice.project.name}</em>
+			</h1>
+		</section>
+
+		<section>
+			<h2>Service Provider (Contractor)</h2>
+			<EntityComponent entity={provider} />
+		</section>
+
+		<section>
+			<h2>Service Receiver (Client)</h2>
+			<EntityComponent entity={client} />
+		</section>
+
+		<section>
+			<h2>Project Details</h2>
+			<table>
+				<tbody>
+					<tr>
+						<th>Project Name</th>
+						<td>{invoice.project.name}</td>
+					</tr>
+
+					<tr>
+						<th>Project Services</th>
+						<td>
+							{services.map((v) => <div>{v}</div>)}
+						</td>
+					</tr>
+					{
+						invoice.project.note && (
+							<tr>
+								<th>Project Note</th>
+								<td>{invoice.project.note}</td>
+							</tr>
+						)
+					}
+				</tbody>
+			</table>
+		</section>
+
+		<section>
+			<h2>{shortType} Details</h2>
+			<table>
+				<tbody>
+					<tr>
+						<th>{shortType} Issued</th>
+						<td><DateComponent date={issued} /></td>
+					</tr>
+
+					{
+						!invoice.paid && due && (
+							<tr>
+								<th>{shortType} Due</th>
+								<td>
+									<DateComponent date={due} />
+									{overdue && (
+										<div class="payment-overdue">
+											Complete payment is overdue
+										</div>
+									)}
+								</td>
+							</tr>
+						)
+					}
+
+					<tr>
+						<th>{shortType} Amount</th>
+						<td>
+							<CurrencyComponent
+								amount={invoice.amount}
+								currency={invoice.currency}
+								gst={invoice.gst}
+							/>
+						</td>
+					</tr>
+
+					{
+						type === 'invoice' && (
+							<tr>
+								<th>Invoice Payments</th>
+								<td>
+									{invoice.payments &&
+										invoice.payments.length &&
+										invoice.payments.map((v, i) => (
+											<div>
+												<CurrencyComponent
+													amount={v.amount}
+													currency={v.currency || invoice.currency}
+												/>
+												on <DateComponent date={new Daet(v.date)} />
+												{v.from && ` from ${v.from}`}
+											</div>
+										))}
+									{invoice.paid ? (
+										<div class="payment-complete">Invoice payment complete</div>
+									) : (
+										<div class="payment-incomplete">
+											Invoice awaiting
+											{invoice.payments
+												? 'complete payment'
+												: 'initial payment'}
+										</div>
+									)}
+								</td>
+							</tr>
+						)
+					}
+					{
+						invoice.paid === false && (
+							<tr>
+								<th>Payment Options</th>
+								<td>
+									<a href="https://bevry.me/payment">
+										https://bevry.me/payment
+									</a>
+								</td>
+							</tr>
+						)
+					}
+					{
+						invoice.note && (
+							<tr>
+								<th>{shortType} Note</th>
+								<td>{invoice.note}</td>
+							</tr>
+						)
+					}
+				</tbody>
+			</table>
+		</section>
+		<InvoiceItemsComponent invoice={invoice} />
+	</article>
+</LayoutComponent>

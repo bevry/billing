@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="2560px" height="1440px" viewBox="0 0 2560 1440" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Bevry General Banner</title>
+    <g id="Bevry-General-Banner" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" font-family="MyriadPro-Regular, Myriad Pro" font-weight="normal">
+        <text id="Bevry" font-size="431" letter-spacing="5.98611" fill="#000000">
+            <tspan x="745" y="809">Bevry</tspan>
+        </text>
+        <text id="open-collaboration" font-size="96" letter-spacing="-1.095235e-07" fill="#666666">
+            <tspan x="773" y="911">open-collaboration</tspan>
+        </text>
+    </g>
+</svg>

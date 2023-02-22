@@ -1,0 +1,40 @@
+---
+export interface Props {
+	title: string
+	nav?: {
+		href: string
+		text: string
+		title: string
+	}[]
+}
+const { title, nav } = Astro.props
+---
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="generator" content={Astro.generator} />
+		<link
+			rel="stylesheet"
+			href="//cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+		/>
+		<link rel="stylesheet" href="/index.css" />
+		<title>{title || 'Bevry Billing'}</title>
+	</head>
+	<body>
+		{
+			nav && nav.length && (
+				<header class="nav">
+					{nav.map(({ href, title, text }) => (
+						<a href={href} title={title}>
+							{text}
+						</a>
+					))}
+				</header>
+			)
+		}
+		<slot />
+	</body>
+</html>

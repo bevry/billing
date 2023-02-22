@@ -1,132 +1,31 @@
 {
-  "name": "billing",
-  "version": "1.0.0",
+  "title": "Bevry Billing",
+  "name": "bevry-billing",
   "private": true,
-  "description": "Bevry's billing system",
-  "homepage": "https://github.com/bevry/billing",
-  "license": "MIT",
-  "keywords": [
-    "bevry",
-    "billing",
-    "invoices",
-    "invoice",
-    "website",
-    "cloudflare-worker"
-  ],
-  "badges": {
-    "list": [
-      "travisci",
-      "---",
-      "githubsponsors",
-      "patreon",
-      "flattr",
-      "liberapay",
-      "buymeacoffee",
-      "opencollective",
-      "crypto",
-      "paypal",
-      "wishlist"
-    ],
-    "config": {
-      "githubSponsorsUsername": "balupton",
-      "buymeacoffeeUsername": "balupton",
-      "cryptoURL": "https://bevry.me/crypto",
-      "flattrUsername": "balupton",
-      "liberapayUsername": "bevry",
-      "opencollectiveUsername": "bevry",
-      "patreonUsername": "bevry",
-      "paypalURL": "https://bevry.me/paypal",
-      "wishlistURL": "https://bevry.me/wishlist",
-      "travisTLD": "com"
-    }
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
   },
-  "funding": "https://bevry.me/fund",
-  "author": "2017+ Benjamin Lupton <b@lupton.cc>",
-  "maintainers": [
-    "Benjamin Lupton <b@lupton.cc>"
-  ],
-  "contributors": [
-    "Benjamin Lupton (http://balupton.com)"
-  ],
-  "bugs": {
-    "url": "https://github.com/bevry/billing/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/bevry/billing.git"
-  },
-  "engines": {
-    "node": ">=12"
-  },
-  "editions": [
-    {
-      "description": "source",
-      "directory": ".",
-      "tags": [
-        "typescript",
-        "html",
-        "css",
-        "import"
-      ]
-    }
-  ],
-  "type": "commonjs",
   "dependencies": {
-    "currency-formatter": "^1.5.5",
-    "daet": "^1.10.0",
-    "lit-html": "^1.1.2"
+    "@astrojs/cloudflare": "^6.1.3",
+    "@astrojs/tailwind": "^3.0.1",
+    "astro": "^2.0.13",
+    "daet": "^3.23.0",
+    "tailwindcss": "^3.2.7"
   },
   "devDependencies": {
-    "@pika/web": "^0.6.1",
-    "@types/hyperscript": "^0.0.3",
-    "@types/node": "^12.12.17",
-    "@typescript-eslint/eslint-plugin": "^2.11.0",
-    "@typescript-eslint/parser": "^2.11.0",
-    "eslint": "^6.7.2",
-    "eslint-config-bevry": "^2.3.0",
-    "eslint-config-prettier": "^6.7.0",
-    "eslint-plugin-prettier": "^3.1.1",
-    "prettier": "^1.19.1",
-    "projectz": "^1.16.0",
-    "serve": "^11.2.0",
-    "simplytyped": "^3.2.3",
-    "stylelint": "^12.0.0",
-    "stylelint-config-prettier": "^8.0.0",
-    "stylelint-config-standard": "^19.0.0",
-    "stylelint-prettier": "^1.1.1",
-    "surge": "^0.21.3",
-    "ts-node": "^8.5.4",
-    "typescript": "^3.7.3"
-  },
-  "scripts": {
-    "my:clean:typescript": "rm -Rf ./javascript ./www/scripts",
-    "my:compile:data": "mkdir -p ./typescript/data && cp -n ./typescript/base/* ./typescript/data/ || true && tsc --project ./typescript/scripts/tsconfig.json && node ./javascript/scripts/compile.js && npm run my:clean:typescript",
-    "my:compile:modules": "pika-web --clean --optimize --dest www/vendor",
-    "my:compile:typescript": "tsc --project ./typescript/tsconfig.json",
-    "my:deploy": "surge ./www billing.bevry.me",
-    "our:clean": "rm -Rf ./docs ./edition* ./es2015 ./es5 ./out ./.next",
-    "our:clean:typescript": "npm run my:clean:typescript",
-    "our:compile": "npm run our:compile:data && npm run our:compile:modules && npm run our:compile:typescript",
-    "our:compile:data": "npm run my:compile:data",
-    "our:compile:modules": "npm run my:compile:modules",
-    "our:compile:typescript": "npm run my:compile:typescript",
-    "our:deploy": "npm run my:deploy",
-    "our:meta": "npm run our:meta:projectz",
-    "our:meta:projectz": "projectz compile",
-    "our:release": "npm run our:release:push",
-    "our:release:prepare": "npm run our:clean && npm run our:compile && npm run our:test && npm run our:meta",
-    "our:release:push": "git push origin master && git push origin --tags",
-    "our:setup": "npm run our:setup:install",
-    "our:setup:install": "npm install",
-    "our:test": "npm run our:verify && npm test",
-    "our:verify": "npm run our:verify:eslint && npm run our:verify:prettier && npm run our:verify:stylelint && npm run our:verify:typescript",
-    "our:verify:eslint": "eslint --fix --ignore-pattern '**/*.d.ts' --ignore-pattern '**/vendor/' --ignore-pattern '**/node_modules/' --ext .mjs,.js,.jsx,.ts,.tsx .",
-    "our:verify:prettier": "prettier --write ./**",
-    "our:verify:stylelint": "stylelint --fix './**/*.css'",
-    "our:verify:typescript": "tsc --noEmit --project typescript/tsconfig.json",
-    "prepare": "npm run my:compile:modules",
-    "test": "echo no need for this project",
-    "start": "npm run our:clean && npm run our:compile && serve ./www/"
+    "eslint": "^8.34.0",
+    "eslint-config-bevry": "^3.27.0",
+    "eslint-config-prettier": "^8.6.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.4",
+    "simplytyped": "^3.3.0",
+    "wrangler": "^2.10.0"
   },
   "eslintConfig": {
     "extends": [
@@ -136,23 +35,5 @@
   "prettier": {
     "semi": false,
     "singleQuote": true
-  },
-  "boundation": {
-    "tsconfig": "typescript/tsconfig.json",
-    "deployTarget": "billing.bevry.me",
-    "travisWebsite": false
-  },
-  "stylelint": {
-    "extends": [
-      "stylelint-config-standard",
-      "stylelint-prettier/recommended"
-    ],
-    "plugins": [
-      "stylelint-prettier"
-    ],
-    "ignoreFiles": [
-      "**/vendor/*.css",
-      "node_modules"
-    ]
   }
 }

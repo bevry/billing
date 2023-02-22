@@ -1,0 +1,75 @@
+---
+import LayoutComponent from '../../../layouts/Layout.astro'
+import InvoiceListingComponent from '../../../components/InvoiceListing.astro'
+import { getDatabase } from '../../../data/database'
+// @ts-ignore
+import { forbiddenResponse } from '../../../util'
+
+// import entities from '../../data/entities'
+// export function getStaticPaths() {
+// 	return Object.keys(entities).map((id) => ({
+// 		params: { entityId: id },
+// 	}))
+// }
+
+// check we are authenticated
+const entityEmail =
+	Astro.request.headers.get('Cf-Access-Authenticated-User-Email') ||
+	Astro.cookies.get('entityEmail')?.value ||
+	null
+if (!entityEmail) return forbiddenResponse('No entity email')
+
+// we have the entity id from the url param
+const entityId = Astro.params.entityId
+if (!entityId) return forbiddenResponse('No entity id')
+
+// fetch details for this entity
+const database = getDatabase(entityId, entityEmail)
+const entity = database.entities[entityId]
+
+// confirm we have results
+if (!entity) return forbiddenResponse('No entity match')
+// render
+---
+
+<LayoutComponent title={`Invoices for ${entity.name}`}>
+	<article class="invoices">
+		<section>
+			<h1>
+				Welcome {entity.name},<br />here are your invoices
+			</h1>
+		</section>
+		{
+			database.idsOfUnpaidInvoices.length && (
+				<section>
+					<h2>Unpaid invoices</h2>
+					<ul>
+						{database.idsOfUnpaidInvoices.map((invoiceId) => (
+							<InvoiceListingComponent
+								entityId={entityId}
+								invoiceId={invoiceId}
+								database={database}
+							/>
+						))}
+					</ul>
+				</section>
+			)
+		}
+		{
+			database.idsOfPaidInvoices.length && (
+				<section>
+					<h2>Unpaid invoices</h2>
+					<ul>
+						{database.idsOfPaidInvoices.map((invoiceId) => (
+							<InvoiceListingComponent
+								entityId={entityId}
+								invoiceId={invoiceId}
+								database={database}
+							/>
+						))}
+					</ul>
+				</section>
+			)
+		}
+	</article>
+</LayoutComponent>
