@@ -1,21 +1,58 @@
-# build output
-dist/
+# 2020 June 3
+# https://github.com/bevry/base
 
-# generated types
-.astro/
+# System Files
+**/.DS_Store
 
-# dependencies
-node_modules/
+# Temp Files
+**/.docpad.db
+**/*.log
+**/*.cpuprofile
+**/*.heapsnapshot
 
-# logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# Editor Files
+.c9/
+.vscode/
 
-# environment variables
+# Yarn Files
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+.pnp/
+
+# Private Files
 .env
-.env.production
+.idea
+.cake_task_cache
 
-# macOS-specific files
-.DS_Store
+# Build Caches
+build/
+bower_components/
+node_modules/
+.next/
+
+# -------------------------------------
+# CDN Inclusions, Git Exclusions
+
+# Build Outputs
+**/out.*
+**/*.out.*
+**/out/
+**/output/
+*compiled*
+edition*/
+coffeejs/
+coffee/
+es5/
+es2015/
+esnext/
+docs/
+
+# =====================================
+# CUSTOM
+
+.now
+.dev.vars

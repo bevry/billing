@@ -1,17 +1,17 @@
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 body {
-  /* https://gist.github.com/tmslnz/bc6dcd0a6e75bf20a28b */
-  font-family: Cochin, -apple-system-body, HelveticaNeue, LucidaGrande,
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  cursor: default;
-  margin: 0;
-  padding: 0;
-  background: rgba(0, 0, 0, 0.04);
+	/* https://gist.github.com/tmslnz/bc6dcd0a6e75bf20a28b */
+	font-family: Cochin, -apple-system-body, HelveticaNeue, LucidaGrande,
+		sans-serif;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+	cursor: default;
+	margin: 0;
+	padding: 0;
+	background: rgba(0, 0, 0, 0.04);
 }
 
 h1,
@@ -20,8 +20,8 @@ h3,
 h4,
 h5,
 h6 {
-  text-align: center;
-  margin: 1rem 0 0.5rem;
+	text-align: center;
+	margin: 1rem 0 0.5rem;
 }
 
 /*
@@ -39,58 +39,58 @@ h1, h2, th, body {
 */
 
 em {
-  text-decoration: underline;
-  font-style: unset;
+	text-decoration: underline;
+	font-style: unset;
 }
 
 pre,
 code {
-  margin: 0;
-  padding: 0;
-  font-family: unset;
+	margin: 0;
+	padding: 0;
+	font-family: unset;
 }
 
 table {
-  width: 100%;
+	width: 100%;
 }
 th {
-  text-align: right;
-  width: 50%;
-  vertical-align: top;
+	text-align: right;
+	width: 50%;
+	vertical-align: top;
 }
 th,
 td {
-  padding: 0 2%;
+	padding: 0 2%;
 }
 
 .w100 {
-  width: 100%;
+	width: 100%;
 }
 .wfit {
-  width: fit-content;
+	width: fit-content;
 }
 .items {
-  padding: 0;
-  margin: 0 auto;
-  width: fit-content;
-  text-align: justify;
+	padding: 0;
+	margin: 0 auto;
+	width: fit-content;
+	text-align: justify;
 }
 
 article.error {
-  padding: 10vh 10vw;
+	padding: 10vh 10vw;
 }
 article.invoices {
-  padding: 0 5vw;
-  padding-bottom: 5vh;
+	padding: 0 5vw;
+	padding-bottom: 5vh;
 }
 
 section {
-  margin: 3rem 2rem;
-  page-break-inside: avoid;
+	margin: 3rem 2rem;
+	page-break-inside: avoid;
 }
 
 .capitalise::first-letter {
-  text-transform: capitalize;
+	text-transform: capitalize;
 }
 
 /* ================================================ */
@@ -98,29 +98,29 @@ section {
 /* INVOICE STYLES */
 
 article {
-  margin: 10vh 10vw;
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	margin: 10vh 10vw;
+	background: white;
+	border: 1px solid rgba(0, 0, 0, 0.15);
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 article em {
-  display: block;
+	display: block;
 }
 
 .payment-complete {
-  color: darkgreen;
-  font-weight: bold;
-  text-decoration: underline;
+	color: darkgreen;
+	font-weight: bold;
+	text-decoration: underline;
 }
 .payment-incomplete {
-  color: orangered;
-  font-weight: bold;
-  text-decoration: underline;
+	color: orangered;
+	font-weight: bold;
+	text-decoration: underline;
 }
 .payment-overdue {
-  color: red;
-  font-weight: bold;
-  text-decoration: underline;
+	color: red;
+	font-weight: bold;
+	text-decoration: underline;
 }
 
 /* ================================================ */
@@ -128,44 +128,44 @@ article em {
 /* PRINT STYLES */
 
 @page {
-  /* only cm supported, no safari support http://caniuse.com/#feat=css-paged-media */
-  margin: 2.5cm;
+	/* only cm supported, no safari support http://caniuse.com/#feat=css-paged-media */
+	margin: 2.5cm;
 }
 @media print {
-  body {
-    background: white;
-    font-size: 10pt;
-  }
-  header,
-  footer {
-    display: none !important;
-  }
+	body {
+		background: white;
+		font-size: 10pt;
+	}
+	header,
+	footer {
+		display: none !important;
+	}
 
-  a {
-    color: inherit !important;
-    text-decoration: inherit !important;
-  }
+	a {
+		color: inherit !important;
+		text-decoration: inherit !important;
+	}
 
-  article {
-    border: none;
-    box-shadow: none;
-    margin: 0;
-  }
-  section {
-    margin: 3rem 0;
-  }
-  h1 {
-    font-size: 1.8em;
-    margin-top: 0;
-  }
-  section:last-child {
-    margin-bottom: 0;
-  }
+	article {
+		border: none;
+		box-shadow: none;
+		margin: 0;
+	}
+	section {
+		margin: 3rem 0;
+	}
+	h1 {
+		font-size: 1.8em;
+		margin-top: 0;
+	}
+	section:last-child {
+		margin-bottom: 0;
+	}
 
-  /* fix print issue */
-  .items li {
-    width: 110%;
-  }
+	/* fix print issue */
+	.items li {
+		width: 110%;
+	}
 }
 
 /* ================================================ */
@@ -173,29 +173,29 @@ article em {
 /* HOME ARROW BUTTON */
 
 .nav a {
-  position: absolute;
-  display: block;
-  top: 0;
-  left: 0;
-  height: 10vh;
-  width: 100%;
-  font-size: 10vh;
-  padding-left: 10vw;
-  transition: padding 0.4s, color ease-in-out 0.4s;
-  margin-top: -0.5vh;
-  font-family: Asap, Noto Serif, Noto Sans, Peddana, PT Mono, Archivo Narrow,
-    Dosis, Crimson Text, Fira Sans, Comfortaa, News Cycle, Old Stanard TT, Cardo,
-    Trirong, sans-serif;
+	position: absolute;
+	display: block;
+	top: 0;
+	left: 0;
+	height: 10vh;
+	width: 100%;
+	font-size: 10vh;
+	padding-left: 10vw;
+	transition: padding 0.4s, color ease-in-out 0.4s;
+	margin-top: -0.5vh;
+	font-family: Asap, Noto Serif, Noto Sans, Peddana, PT Mono, Archivo Narrow,
+		Dosis, Crimson Text, Fira Sans, Comfortaa, News Cycle, Old Stanard TT, Cardo,
+		Trirong, sans-serif;
 }
 .nav a,
 .nav a:visited {
-  text-decoration: none !important;
-  color: #ddd;
+	text-decoration: none !important;
+	color: #ddd;
 }
 .nav a:hover {
-  padding-left: 7vw;
-  color: #00e;
+	padding-left: 7vw;
+	color: #00e;
 }
 .nav a:active {
-  padding-left: 3vw;
+	padding-left: 3vw;
 }

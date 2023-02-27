@@ -1,1 +1,1 @@
-*src/data/* filter=strongbox diff=strongbox
+source/data/* filter=strongbox diff=strongbox

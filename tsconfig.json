@@ -1,3 +1,21 @@
 {
-  "extends": "astro/tsconfigs/strict"
+  "compilerOptions": {
+    "strict": true,
+    "removeComments": true,
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "maxNodeModuleJsDepth": 5,
+    "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "/vendor/*.js": ["../node_modules/*"]
+    },
+    "types": ["@cloudflare/workers-types"]
+  },
+  "exclude": []
 }
