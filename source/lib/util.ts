@@ -1,4 +1,4 @@
-import type { Invoice } from './types'
+import type { Invoice } from 'lib/types'
 import Daet from 'daet'
 
 import { createWebCryptSession } from 'webcrypt-session'

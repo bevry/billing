@@ -11,9 +11,9 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "rootDir": ".",
-    "baseUrl": ".",
+    "baseUrl": "source",
     "paths": {
-      "/vendor/*.js": ["../node_modules/*"]
+      "/vendor/*.js": ["node_modules/*"]
     },
     "types": ["@cloudflare/workers-types"]
   },

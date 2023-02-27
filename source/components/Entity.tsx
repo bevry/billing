@@ -1,5 +1,5 @@
-import { has } from 'source/util'
-import type { Entity } from '../types'
+import { has } from 'lib/util'
+import type { Entity } from 'lib/types'
 export interface Props {
 	entity: Entity
 }

@@ -1,4 +1,4 @@
-import type { Database, Id } from '../types'
+import type { Database, Id } from 'lib/types'
 export interface Props {
 	database: Database
 	entityId: Id

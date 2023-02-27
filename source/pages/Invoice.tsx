@@ -1,17 +1,17 @@
-import BillingLayoutComponent from 'source/layouts/Billing'
-import EntityComponent from 'source/components/Entity'
-import DateComponent from 'source/components/Date'
-import InvoiceItemsComponent from 'source/components/InvoiceItems'
-import CurrencyComponent from 'source/components/Currency'
+import BillingLayoutComponent from 'layouts/Billing'
+import EntityComponent from 'components/Entity'
+import DateComponent from 'components/Date'
+import InvoiceItemsComponent from 'components/InvoiceItems'
+import CurrencyComponent from 'components/Currency'
 import Daet from 'daet'
 import {
 	getInvoiceFullType,
 	getInvoiceShortType,
 	getInvoiceType,
 	has,
-} from 'source/util'
+} from 'lib/util'
 
-import { Database, Id } from 'source/types'
+import { Database, Id } from 'lib/types'
 export interface Props {
 	database: Database
 	entityId: Id

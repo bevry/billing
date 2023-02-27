@@ -1,6 +1,6 @@
-import InvoiceListingComponent from 'source/components/InvoiceListing'
-import { Database, Entity, Id } from 'source/types'
-import BillingLayoutComponent from 'source/layouts/Billing'
+import InvoiceListingComponent from 'components/InvoiceListing'
+import { Database, Entity, Id } from 'lib/types'
+import BillingLayoutComponent from 'layouts/Billing'
 export interface Props {
 	database: Database
 	entityId: Id

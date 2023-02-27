@@ -1,8 +1,8 @@
 // entity invoices
-import InvoicesPageComponent from 'source/pages/Invoices'
-import type { Env } from 'source/env'
-import { sendError, sendReact, getSession } from 'source/util'
-import { getDatabase } from 'source/data/database'
+import InvoicesPageComponent from 'pages/Invoices'
+import type { Env } from 'lib/env'
+import { sendError, sendReact, getSession } from 'lib/util'
+import { getDatabase } from 'data/database'
 
 // import entities from '../../data/entities'
 // export function getStaticPaths() {

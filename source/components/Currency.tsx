@@ -1,5 +1,5 @@
-import { has } from 'source/util'
-import type { Currency } from '../types'
+import { has } from 'lib/util'
+import type { Currency } from 'lib/types'
 export interface Props {
 	amount: number
 	currency: Currency

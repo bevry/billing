@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { has } from 'source/util'
+import { has } from 'lib/util'
 export interface Props {
 	title: string
 	nav?: {

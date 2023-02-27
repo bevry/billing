@@ -1,4 +1,4 @@
-import TailwindLayoutComponent from '../layouts/Tailwind'
+import TailwindLayoutComponent from 'layouts/Tailwind'
 export interface Props {
 	email?: string
 }

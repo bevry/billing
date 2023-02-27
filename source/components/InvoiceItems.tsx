@@ -1,6 +1,6 @@
-import type { Invoice } from '../types'
-import { getInvoiceShortType } from '../util'
-import CurrencyComponent from './Currency'
+import type { Invoice } from 'lib/types'
+import { getInvoiceShortType } from 'lib/util'
+import CurrencyComponent from 'components/Currency'
 export interface Props {
 	invoice: Invoice
 }
