@@ -1,7 +1,6 @@
 import BillingLayoutComponent from 'layouts/Billing'
 import EntityComponent from 'components/Entity'
 import DateComponent from 'components/Date'
-import InvoiceItemsComponent from 'components/InvoiceItems'
 import CurrencyComponent from 'components/Currency'
 import Daet from 'daet'
 import {
@@ -163,8 +162,8 @@ export default function InvoicePageComponent({
 											<div className="payment-incomplete">
 												Invoice awaiting
 												{invoice.payments
-													? 'complete payment'
-													: 'initial payment'}
+													? ' complete payment'
+													: ' initial payment'}
 											</div>
 										)}
 									</td>
@@ -189,7 +188,28 @@ export default function InvoicePageComponent({
 						</tbody>
 					</table>
 				</section>
-				<InvoiceItemsComponent invoice={invoice} />
+				{has(invoice.items?.length) && (
+					<section>
+						<h2>{shortType} Items</h2>
+						<table>
+							<tr>
+								<td colSpan={2} className="w100">
+									<ol className="items">
+										{invoice.items!.map((invoiceItem) => (
+											<li>
+												<CurrencyComponent
+													amount={invoiceItem.amount}
+													currency={invoice.currency}
+												/>
+												for {invoiceItem.name}
+											</li>
+										))}
+									</ol>
+								</td>
+							</tr>
+						</table>
+					</section>
+				)}
 			</article>
 		</BillingLayoutComponent>
 	)

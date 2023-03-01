@@ -98,7 +98,7 @@ interface InvoiceParent extends InvoiceBase {
 interface InvoiceChild extends Partial<InvoiceBase> {
 	inherit: Id
 }
-type InvoiceRaw = StrictUnion<InvoiceParent | InvoiceChild>
+export type InvoiceRaw = StrictUnion<InvoiceParent | InvoiceChild>
 interface InvoicesRaw {
 	[id: Id]: InvoiceRaw
 }

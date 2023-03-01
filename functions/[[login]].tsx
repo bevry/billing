@@ -155,9 +155,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 			// check magic link sent
 			if (!magicFetch.ok) {
 				const magicResponse = await magicFetch.text()
+				console.debug(token)
 				return sendError(
 					`Magic Link: ${magicFetch.status} ${magicFetch.statusText}: ${magicResponse}`,
-					magicFetch.status
+					magicFetch.status,
+					{
+						'Set-Cookie': getCookieHeaderValue(
+							context.request,
+							session.toHeaderValue()
+						),
+					}
 				)
 			}
 
