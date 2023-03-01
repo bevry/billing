@@ -55,5 +55,5 @@ docs/
 # CUSTOM
 
 .now
-.dev.vars
+# .dev.vars
 public/*.min.css

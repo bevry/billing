@@ -27,6 +27,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 		session.userAgent !== userAgent ||
 		session.entityId !== entityId
 	) {
+		console.debug(JSON.stringify({ session, userAgent, entityId }, null, '  '))
 		return sendError('unauthorized', 401)
 	}
 
