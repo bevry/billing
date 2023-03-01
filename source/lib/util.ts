@@ -39,6 +39,7 @@ export async function getSession(request: Request, password: string) {
 }
 
 export function getCookieHeaderValue(request: Request, value?: string) {
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
 	value = throwIfEmpty(value, 'no session value')
 	const url = new URL(request.url)
 	return `${value}; Secure; Path=/; Domain=${url.hostname}`

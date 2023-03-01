@@ -8,8 +8,8 @@ export default function RedirectPageComponent({ url }: Props) {
 			title="Redirecting"
 			className="bg-gray-50 flex h-screen"
 		>
-			<div className="py-8 px-4 mx-auto max-w-screen-xl lg:py-16 lg:px-6">
-				<div className="mx-auto max-w-screen-sm text-center">
+			<div className="m-auto">
+				<div className="text-center">
 					<div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 p-2 flex items-center justify-center mx-auto mb-3.5">
 						<svg
 							aria-hidden="true"
@@ -26,21 +26,20 @@ export default function RedirectPageComponent({ url }: Props) {
 						</svg>
 						<span className="sr-only">Success</span>
 					</div>
-					<p className="mb-4 text-3xl tracking-tight font-bold text-gray-900 md:text-4xl dark:text-white">
-						Redirecting
+					<h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+						Redirecting...
+					</h1>
+					<p className="mt-6 text-base leading-7 text-gray-600">
+						If you are not redirected automatically:
 					</p>
-					<p className="mb-4 text-lg font-light text-gray-500 dark:text-gray-400">
-						If your browser does not redirect automatically
+					<p className="mt-4">
+						<a href={url} className="text-sm font-semibold text-gray-900">
+							Redirect Manually <span aria-hidden="true">&rarr;</span>
+						</a>
 					</p>
-					<a
-						href={url}
-						className="inline-flex text-white bg-primary-600 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:focus:ring-primary-900 my-4"
-					>
-						redirect manually
-					</a>
 				</div>
 			</div>
-			<script>document.location = {url}</script>
+			{/*<script>document.location = {url}</script>*/}
 		</TailwindLayoutComponent>
 	)
 }

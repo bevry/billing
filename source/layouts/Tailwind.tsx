@@ -18,6 +18,10 @@ export default function TailwindLayoutComponent({
 					content="width=device-width, initial-scale=1, shrink-to-fit=no"
 				/>
 				<link rel="stylesheet" href="/tailwind.min.css" />
+				<link
+					href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.3/flowbite.min.css"
+					rel="stylesheet"
+				/>
 				<title>{title || 'Bevry Billing'}</title>
 			</head>
 			<body
@@ -26,6 +30,7 @@ export default function TailwindLayoutComponent({
 				}
 			>
 				{children}
+				<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.3/flowbite.min.js"></script>
 			</body>
 		</html>
 	)
