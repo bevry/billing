@@ -85,6 +85,15 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 			// prep the verification url
 			const magicLink = new URL(context.request.url)
 			magicLink.pathname = `/authenticate/${token}`
+			// https://mailchannels.zendesk.com/hc/en-us/articles/7122849237389
+			// https://api.mailchannels.net/tx/v1/documentation
+			// https://www.cloudflare.com/en-ca/learning/dns/dns-records/dns-dkim-record/
+			// https://www.cloudflare.com/en-au/learning/dns/dns-records/dns-dmarc-record/
+			// https://en.wikipedia.org/wiki/Sender_Policy_Framework
+			// https://en.wikipedia.org/wiki/DomainKeys_Identified_Mail
+			// https://dmarc.org/wiki/FAQ
+			if (!context.env.MAILCHANNELS_PRIVATE_KEY)
+				throw new Error('Missing DKIM Private Key for Mail Channels')
 			const magicFetch = await fetch(
 				'https://api.mailchannels.net/tx/v1/send',
 				{
@@ -101,6 +110,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 										name: entity.contact.name || entity.name,
 									},
 								],
+								dkim_domain: 'bevry.me',
+								dkim_selector: 'mcdkim',
+								dkim_private_key: context.env.MAILCHANNELS_PRIVATE_KEY,
 							},
 						],
 						from: {
@@ -121,11 +133,13 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 			)
 
 			// check magic link sent
-			if (!magicFetch.ok)
+			if (!magicFetch.ok) {
+				const magicResponse = await magicFetch.text()
 				return sendError(
-					`Magic Link: ${magicFetch.status} ${magicFetch.statusText}`,
+					`Magic Link: ${magicFetch.status} ${magicFetch.statusText}: ${magicResponse}`,
 					magicFetch.status
 				)
+			}
 
 			// render login form with email sent
 			return sendReact(LoginPageComponent({ email }), {

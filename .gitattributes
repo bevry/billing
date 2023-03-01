@@ -1,1 +1,2 @@
 source/data/* filter=strongbox diff=strongbox
+.def.vars filter=strongbox diff=strongbox
