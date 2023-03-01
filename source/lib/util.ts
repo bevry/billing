@@ -87,3 +87,9 @@ export function sendRedirect(
 		},
 	})
 }
+// return sendRedirect(url.href, 303, {
+// 	'Set-Cookie': getCookieHeaderValue(
+// 		context.request,
+// 		session.toHeaderValue()
+// 	),
+// })

@@ -6,7 +6,6 @@ import {
 	sendReact,
 	getSession,
 	getCookieHeaderValue,
-	sendRedirect,
 } from 'lib/util'
 import { getEntity } from 'data/database'
 
@@ -20,21 +19,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
 	// route
 	const url = new URL(context.request.url)
-	if (url.pathname === '/') {
-		// wipe session
-		await session.save({
-			entityId: '',
-			verified: false,
-			token: '',
-			userAgent,
-		})
-		return sendRedirect(url.href, 303, {
-			'Set-Cookie': getCookieHeaderValue(
-				context.request,
-				session.toHeaderValue()
-			),
-		})
-	} else if (url.pathname === '/logout') {
+	if (url.pathname === '/logout') {
 		// wipe session
 		await session.save({
 			entityId: '',

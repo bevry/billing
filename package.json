@@ -27,7 +27,6 @@
     "eslint-config-bevry": "^3.27.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "flowbite": "^1.6.3",
     "prettier": "^2.8.4",
     "wrangler": "^2.12.0"
   },
