@@ -26,6 +26,7 @@ export function has<T>(value: T) {
 }
 
 export async function getSession(request: Request, password: string) {
+	if (!password) throw new Error('Session Password is required.')
 	const sessionScheme = z.object({
 		entityId: z.string(),
 		verified: z.boolean(),
