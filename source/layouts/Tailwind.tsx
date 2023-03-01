@@ -17,7 +17,7 @@ export default function TailwindLayoutComponent({
 					name="viewport"
 					content="width=device-width, initial-scale=1, shrink-to-fit=no"
 				/>
-				<link rel="stylesheet" href="/tailwind.css" />
+				<link rel="stylesheet" href="/tailwind.min.css" />
 				<title>{title || 'Bevry Billing'}</title>
 			</head>
 			<body

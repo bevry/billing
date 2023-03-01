@@ -1,14 +1,9 @@
 import type { Invoice } from 'lib/types'
 import Daet from 'daet'
+import { renderToStaticMarkup } from 'react-dom/server'
 
 import { createWebCryptSession } from 'webcrypt-session'
 import { z } from 'zod'
-const sessionScheme = z.object({
-	entityId: z.string(),
-	verified: z.boolean(),
-	token: z.string(),
-	userAgent: z.string(),
-})
 
 export function isInvalidDate(datetime: string) {
 	return isNaN(new Daet(datetime).getTime())
@@ -31,6 +26,12 @@ export function has<T>(value: T) {
 }
 
 export async function getSession(request: Request, password: string) {
+	const sessionScheme = z.object({
+		entityId: z.string(),
+		verified: z.boolean(),
+		token: z.string(),
+		userAgent: z.string(),
+	})
 	return createWebCryptSession(sessionScheme, request, {
 		password,
 	})
@@ -45,11 +46,8 @@ export function sendError(message: string, status: number = 400) {
 	})
 }
 
-export function sendReact(
-	content: JSX.Element | string,
-	headers?: HeadersInit
-) {
-	return new Response(content as string, {
+export function sendReact(content: JSX.Element, headers?: HeadersInit) {
+	return new Response(renderToStaticMarkup(content), {
 		status: 200,
 		headers: {
 			'Content-Type': 'text/html;charset=UTF-8',

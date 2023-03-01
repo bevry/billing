@@ -64,6 +64,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 	} else if (url.pathname === '/' || url.pathname === '/login') {
 		if (context.request.method === 'POST') {
 			// check form email
+			debugger
 			const formData = await context.request.formData()
 			const email = formData.get('email') as string
 			if (!email) return sendError('invalid email')
@@ -121,7 +122,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
 			// check magic link sent
 			if (!magicFetch.ok)
-				return sendError(`${magicFetch.status} ${magicFetch.statusText}`)
+				return sendError(
+					`Magic Link: ${magicFetch.status} ${magicFetch.statusText}`,
+					magicFetch.status
+				)
 
 			// render login form with email sent
 			return sendReact(LoginPageComponent({ email }), {
