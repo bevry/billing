@@ -32,7 +32,7 @@ export default function InvoicesPagesComponent({ database, entityId }: Props) {
 				)}
 				{database.idsOfPaidInvoices.length && (
 					<section>
-						<h2>Unpaid invoices</h2>
+						<h2>Paid invoices</h2>
 						<ul>
 							{database.idsOfPaidInvoices.map((invoiceId) => (
 								<InvoiceListingComponent
