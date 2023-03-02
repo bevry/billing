@@ -149,7 +149,7 @@ export default function InvoicePageComponent({
 													<CurrencyComponent
 														amount={v.amount}
 														currency={v.currency || invoice.currency}
-													/>
+													/>{' '}
 													on <DateComponent date={new Daet(v.date)} />
 													{v.from && ` from ${v.from}`}
 												</div>
@@ -200,7 +200,7 @@ export default function InvoicePageComponent({
 												<CurrencyComponent
 													amount={invoiceItem.amount}
 													currency={invoice.currency}
-												/>
+												/>{' '}
 												for {invoiceItem.name}
 											</li>
 										))}
