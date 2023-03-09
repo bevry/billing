@@ -63,8 +63,13 @@ td {
 	padding: 0 2%;
 }
 
-.w100 {
+td[colspan],
+th[colspan] {
 	width: 100%;
+	text-align: center;
+}
+tr > th[colspan]:only-child {
+	padding: 1em 0 0;
 }
 .wfit {
 	width: fit-content;

@@ -27,6 +27,9 @@ export default function InvoicePageComponent({
 	const provider = database.entities[invoice.provider]
 	const client = database.entities[invoice.client]
 	const services = invoice.services.map((value) => database.services[value])
+	const methods = Array.from(database.methods).filter(
+		(method) => method.currency === invoice.currency
+	)
 
 	const issued = new Daet(invoice.issued)
 	const due: Daet | null =
@@ -169,7 +172,7 @@ export default function InvoicePageComponent({
 									</td>
 								</tr>
 							)}
-							{has(invoice.paid === false) && (
+							{has(!invoice.paid) && (
 								<tr>
 									<th>Payment Options</th>
 									<td>
@@ -188,15 +191,47 @@ export default function InvoicePageComponent({
 						</tbody>
 					</table>
 				</section>
+				{has(!invoice.paid && methods?.length) && (
+					<section>
+						<h2>Payment Options</h2>
+						<table>
+							{methods.map((method) => {
+								const title = (
+									<tr>
+										<th colSpan={2}>
+											{method.currency} {method.location}
+										</th>
+									</tr>
+								)
+								const details = Object.entries(method).map(([key, value]) => {
+									if (['currency', 'location'].includes(key) === false) {
+										return (
+											<tr key={JSON.stringify(method)}>
+												<th>{key}</th>
+												<td>{value}</td>
+											</tr>
+										)
+									}
+								})
+								return (
+									<>
+										{title}
+										{details}
+									</>
+								)
+							})}
+						</table>
+					</section>
+				)}
 				{has(invoice.items?.length) && (
 					<section>
 						<h2>{shortType} Items</h2>
 						<table>
 							<tr>
-								<td colSpan={2} className="w100">
+								<td colSpan={2}>
 									<ol className="items">
 										{invoice.items!.map((invoiceItem) => (
-											<li>
+											<li key={invoiceItem.name}>
 												<CurrencyComponent
 													amount={invoiceItem.amount}
 													currency={invoice.currency}

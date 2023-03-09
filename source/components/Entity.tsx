@@ -58,7 +58,7 @@ export default function EntityComponent({ entity }: Props) {
 				)}
 				{has(entity.verification) &&
 					Object.entries(entity.verification!).map(([k, v]) => (
-						<tr>
+						<tr key={k}>
 							<th>{k}</th>
 							<td>{v}</td>
 						</tr>

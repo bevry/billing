@@ -30,7 +30,7 @@ export default function BillingLayoutComponent({
 				{has(nav?.length) && (
 					<header className="nav">
 						{nav!.map(({ href, title, text }) => (
-							<a href={href} title={title}>
+							<a href={href} title={title} key={href}>
 								{text}
 							</a>
 						))}
