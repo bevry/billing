@@ -32,7 +32,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 	}
 
 	// fetch details for this entity
-	const database = getDatabase(entityId)
+	const database = getDatabase({ entityId, invoiceId })
 	const entity = database.entities[entityId]
 	const invoice = database.invoices[invoiceId]
 
