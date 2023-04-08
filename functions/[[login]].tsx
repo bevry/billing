@@ -155,7 +155,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 			// check magic link sent
 			if (!magicFetch.ok) {
 				const magicResponse = await magicFetch.text()
-				console.debug(token)
+				console.debug(magicLink.href)
 				return sendError(
 					`Magic Link: ${magicFetch.status} ${magicFetch.statusText}: ${magicResponse}`,
 					magicFetch.status,
