@@ -3,8 +3,6 @@ import type { ReactElement } from 'react'
 import Daet from 'daet'
 import RedirectPageComponent from 'pages/Redirect'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { createWebCryptSession } from 'webcrypt-session'
-import { z } from 'zod'
 
 export function isInvalidDate(datetime: string) {
 	return isNaN(new Daet(datetime).getTime())
@@ -26,31 +24,6 @@ export function has<T>(value: T) {
 	return value || null
 }
 
-export async function getSession(request: Request, password: string) {
-	if (!password) throw new Error('Session Password is required.')
-	const sessionScheme = z.object({
-		entityId: z.string(),
-		verified: z.boolean(),
-		token: z.string(),
-		userAgent: z.string(),
-	})
-	return createWebCryptSession(sessionScheme, request, {
-		password,
-	})
-}
-
-export function getCookieHeaderValue(request: Request, value?: string) {
-	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
-	value = throwIfEmpty(value, 'no session value')
-	const url = new URL(request.url)
-	return `${value}; Secure; Path=/; Domain=${url.hostname}`
-}
-
-export function throwIfEmpty<T>(value: T, error: string): NonNullable<T> {
-	if (!value) throw new Error(error)
-	return value
-}
-
 export function sendError(
 	message: string,
 	status: number = 400,
@@ -65,9 +38,13 @@ export function sendError(
 	})
 }
 
-export function sendReact(content: ReactElement, headers: HeadersInit = {}) {
+export function sendReact(
+	content: ReactElement,
+	headers: HeadersInit = {},
+	status: number = 200
+) {
 	return new Response(renderToStaticMarkup(content), {
-		status: 200,
+		status,
 		headers: {
 			'Content-Type': 'text/html;charset=UTF-8',
 			...headers,
@@ -88,9 +65,3 @@ export function sendRedirect(
 		},
 	})
 }
-// return sendRedirect(url.href, 303, {
-// 	'Set-Cookie': getCookieHeaderValue(
-// 		context.request,
-// 		session.toHeaderValue()
-// 	),
-// })

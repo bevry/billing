@@ -22,7 +22,26 @@
 		{ "pattern": "billing.bevry.me/*", "zone_name": "bevry.me" }
 	],
 	"workers_dev": true,
+	// Approximate per-location limits. Use a Durable Object for strict global limits.
+	"ratelimits": [
+		{
+			"name": "LOGIN_IP_RATE_LIMITER",
+			"namespace_id": "1001",
+			"simple": { "limit": 10, "period": 60 }
+		},
+		{
+			"name": "LOGIN_EMAIL_RATE_LIMITER",
+			"namespace_id": "1002",
+			"simple": { "limit": 3, "period": 60 }
+		},
+		{
+			"name": "VERIFY_IP_RATE_LIMITER",
+			"namespace_id": "1003",
+			"simple": { "limit": 10, "period": 60 }
+		}
+	],
 	"observability": {
-		"enabled": true
+		"enabled": true,
+		"head_sampling_rate": 1
 	}
 }
