@@ -6,6 +6,7 @@ When a referenced skill applies with your project's tweaks, the local `<name>.md
 this process is documented in the upstream repo's [local tweaks pattern](https://github.com/bevry-vibes/skills#local-tweaks-pattern).
 
 - https://github.com/bevry-vibes/skills/blob/main/policy.md — **applies**. Agent and model reciprocity rules apply to every session.
+- https://github.com/bevry-vibes/skills/blob/main/secrets.md — **applies**. Never probe for tokens or secrets; use only documented locations and prompt when a key is missing.
 - https://github.com/bevry-vibes/skills/blob/main/conventions.md — **applies**. Base config files are in place; the writing style, wrapping rule, splat naming, and International English rule apply to all authored content.
 - https://github.com/bevry-vibes/skills/blob/main/author.md — **applies**. Authorship, trailers, and signing follow the upstream rules.
 - https://github.com/bevry-vibes/skills/blob/main/commits.md — **applies**. Conventional Commits and agent-detect trailers.
