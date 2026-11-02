@@ -57,3 +57,4 @@ docs/
 .now
 # .dev.vars
 public/*.min.css
+.wrangler/

@@ -6,7 +6,7 @@ The invoice and contact records are real. They compile into the application from
 
 ## How it works
 
-- Cloudflare Pages serves the static assets and runs the Pages Functions in `functions/`.
+- Cloudflare Workers serves the static assets and runs the app router in `worker/`.
 - The sign-in form matches the email address to a known entity. A matching entity receives a magic link by email.
 - The link verifies the session in the same browser and opens the entity page. The page lists that entity's unpaid and paid invoices.
 - An invoice page shows the provider, the client, the project, the amount, the payments, the item lines, and the payment methods for the invoice currency.
@@ -16,7 +16,7 @@ The invoice and contact records are real. They compile into the application from
 
 ## Requirements
 
-- Node.js 18 or later and npm.
+- Node.js 22 or later and npm.
 - A Cloudflare account for deployment.
 - A Mailgun sending key for sign-in email.
 
@@ -28,17 +28,17 @@ npm run build
 npm start
 ```
 
-`npm start` runs the build first, then starts `wrangler pages dev ./public`. The local site listens on the port that Wrangler reports, normally `8788`.
+`npm start` runs the build first, then starts `wrangler dev`. The local site listens on the port that Wrangler reports, normally `8787`.
 
-`wrangler pages dev` reads `.dev.vars`. The repository stores `.dev.vars` through strongbox, so a checkout with the strongbox filter provides the values. Without the filter, copy `.dev.vars.example` to `.dev.vars` and fill the values.
+`wrangler dev` reads `.dev.vars`. The repository stores `.dev.vars` through strongbox, so a checkout with the strongbox filter provides the values. Without the filter, copy `.dev.vars.example` to `.dev.vars` and fill the values.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
 | `npm run build` | Compile `public/tailwind.css` into `public/tailwind.min.css` |
-| `npm start` | Build, then run the local Cloudflare Pages server |
-| `npm run deploy` | Publish `public/` and `functions/` to Cloudflare Pages |
+| `npm start` | Build, then run the local Cloudflare Worker |
+| `npm run deploy` | Build, then deploy the Worker and the `public/` assets |
 
 ## Environment
 
@@ -53,7 +53,7 @@ npm start
 
 The Mailgun HTTP API uses `api:<sending key>` Basic auth. The SMTP login and SMTP password are not used, because Cloudflare Workers send through HTTP.
 
-Set the production values in the Cloudflare Pages project environment. Do not add values to a tracked file.
+Set the production values as Worker secrets with `wrangler secret put`, or in the Cloudflare dashboard. Do not add values to a tracked file.
 
 ## Secret handling
 
@@ -65,13 +65,14 @@ Never copy, quote, summarise, or infer values from those files in this README, `
 
 | Path | Purpose |
 | --- | --- |
-| `functions/` | Pages Functions for login, verification, entity pages, and invoice pages |
+| `worker/` | Worker router and request handlers for login, verification, entity pages, and invoice pages |
 | `source/pages/` | Server-rendered React page components |
 | `source/layouts/` | HTML shells for the invoice pages and the sign-in pages |
 | `source/components/` | Invoice, entity, currency, and date components |
 | `source/data/` | Invoice, entity, payment method, service, and term records (strongbox) |
 | `source/lib/` | Types, session helpers, rendering helpers, and Mailgun delivery |
-| `public/` | Static assets, routes manifest, and the compiled Tailwind stylesheet |
+| `public/` | Static assets and the compiled Tailwind stylesheet |
+| `wrangler.jsonc` | Worker name, entry point, assets binding, and custom domain |
 | `DESIGN.md` | Evergreen design decisions and implementation details |
 | `AGENTS.md` | Instructions for AI agents |
 | `.dev.vars.example` | Names and defaults for the local environment |

@@ -1,5 +1,5 @@
-# Cloudflare Pages Functions environment for local development.
-# Production uses the Pages project environment; see README.md.
+# Cloudflare Workers environment for local development.
+# Production uses Worker secrets; see README.md.
 # Do not commit real values. The managed .dev.vars file is strongbox encrypted.
 
 # Encrypts the login session cookie.

@@ -10,7 +10,7 @@ this process is documented in the upstream repo's [local tweaks pattern](https:/
 - https://github.com/bevry-vibes/skills/blob/main/author.md — **applies**. Authorship, trailers, and signing follow the upstream rules.
 - https://github.com/bevry-vibes/skills/blob/main/commits.md — **applies**. Conventional Commits and agent-detect trailers.
 - https://github.com/bevry-vibes/skills/blob/main/plans.md — **applies**. Plans live in `.plans/` with `.prompts.md` companions.
-- [cloudflare.md](./cloudflare.md) — **applies**, with this project's tweaks (Cloudflare Pages Functions, strongbox secrets, Mailgun delivery).
+- [cloudflare.md](./cloudflare.md) — **applies**, with this project's tweaks (Workers static assets, strongbox secrets, Mailgun delivery).
 - https://github.com/bevry-vibes/skills/blob/main/license.md — once-off initialisation is done (`LICENSE.md`, RPL-1.5, copyright Benjamin Lupton per the git configuration).
 
 ## Project purpose
@@ -25,16 +25,16 @@ Never copy, quote, summarise, or infer values from those files in a public file,
 
 ## Commands
 
-Node.js 18 or later and npm are required.
+Node.js 22 or later and npm are required.
 
 ```bash
 npm install          # Install dependencies
 npm run build        # Compile public/tailwind.min.css
-npm start            # Build, then run wrangler pages dev ./public
-npm run deploy       # Publish public/ and functions/ to Cloudflare Pages
+npm start            # Build, then run wrangler dev
+npm run deploy       # Build, then deploy the Worker and public/ assets
 ```
 
-`wrangler pages dev` reads `.dev.vars`. Copy `.dev.vars.example` to `.dev.vars` when strongbox is not available, and fill the values locally.
+`wrangler dev` reads `.dev.vars`. Copy `.dev.vars.example` to `.dev.vars` when strongbox is not available, and fill the values locally.
 
 ## Key files
 
@@ -43,11 +43,11 @@ npm run deploy       # Publish public/ and functions/ to Cloudflare Pages
 | `DESIGN.md` | Evergreen design decisions and implementation details |
 | `README.md` | Project overview, commands, and public notes |
 | `package.json` | Scripts and dependency versions |
-| `wrangler.toml` | Cloudflare Pages project name |
-| `functions/` | Pages Functions for login, verification, entity pages, and invoice pages |
+| `wrangler.jsonc` | Worker name, entry point, assets binding, and custom domain |
+| `worker/` | Worker router and handlers for login, verification, entity pages, and invoice pages |
 | `source/pages/` | Server-rendered React page components |
 | `source/layouts/` | HTML shells for the invoice pages and the sign-in pages |
 | `source/components/` | Invoice, entity, currency, and date components |
 | `source/data/` | Invoice, entity, payment method, service, and term records (strongbox) |
 | `source/lib/` | Types, session helpers, rendering helpers, and Mailgun delivery |
-| `public/` | Static assets, routes manifest, and the compiled Tailwind stylesheet |
+| `public/` | Static assets and the compiled Tailwind stylesheet |

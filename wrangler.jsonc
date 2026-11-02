@@ -1,0 +1,23 @@
+// Bevry Billing Worker: the static assets in public/ plus the app router in worker/.
+// Secrets never live here: set them with `wrangler secret put` and .dev.vars locally.
+// See .dev.vars.example for the variable names.
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "billing",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-11-02",
+	"assets": {
+		"directory": "./public",
+		"binding": "ASSETS"
+	},
+	// The custom domain provisions DNS and the certificate.
+	// Release the Pages custom domain before the first deploy, or the two projects conflict.
+	"routes": [
+		{ "pattern": "billing.bevry.me", "custom_domain": true },
+		{ "pattern": "billing.bevry.me/*", "zone_name": "bevry.me" }
+	],
+	"workers_dev": true,
+	"observability": {
+		"enabled": true
+	}
+}

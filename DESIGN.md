@@ -32,13 +32,13 @@ Functional:
 Non-functional:
 
 - The login data, the invoice data, and the service credentials never appear in a public file.
-- The application remains small enough to read in one sitting: a handful of Pages Functions, one data module per table, and server-rendered React components.
+- The application remains small enough to read in one sitting: a handful of Worker handlers, one data module per table, and server-rendered React components.
 - The deployment is reproducible from the repository plus environment values.
 - The data module rejects invalid dates, inconsistent totals, duplicate contact emails, and contradictory payment state at import time.
 
 ## Stack
 
-- Cloudflare Pages with Pages Functions in `functions/`.
+- Cloudflare Workers with static assets from `public/` and a module worker in `worker/`.
 - React 18 rendered on the server with `renderToStaticMarkup`.
 - TypeScript, with the `source` directory as the module base.
 - Tailwind CSS for the sign-in and redirect pages.
@@ -55,7 +55,7 @@ Rejected alternatives:
 
 - A database with accounts and passwords: the record set is small, changes rarely, and has no user-generated content. The source files are the system of record. A database would add a migration path, a backup path, and an access-control surface for no current gain.
 - A client-side application: the pages are read-only and benefit from server rendering. Shipping React to the browser would add weight and delay the first readable paint.
-- Cloudflare Workers static assets: the new Cloudflare guidance prefers Workers over Pages. This project already runs on Pages. A migration is separate work and stays out of the current design.
+- Cloudflare Pages: the platform is deprecated for new projects. The project originally ran on Pages Functions and moved to Workers static assets with the same request logic.
 
 ## Request flow
 
@@ -74,7 +74,7 @@ The session is encrypted with `SESSION_PASSWORD`. A missing password throws at r
 
 ### Sign-in
 
-`functions/[[login]].tsx` is the catch-all handler for `/`, `/login`, `/logout`, and `/authenticate/*`.
+`worker/index.ts` is the router. It sends `/`, `/login`, `/logout`, and `/authenticate/*` to `worker/login.tsx`. It sends `/entity/<entityId>` to `worker/entity.tsx` and `/entity/<entityId>/invoice/<invoiceId>` to `worker/invoice.tsx`. Every other request falls through to `env.ASSETS.fetch(request)`.
 
 - `GET /` and `GET /login` create or reuse a token, save the session with an empty entity, and render the form. The response sets the session cookie.
 - `POST /` and `POST /login` read the `email` form field, find the entity whose contact email matches exactly, save the entity id and token in the session, build `/authenticate/<token>`, and send the link.
@@ -174,7 +174,7 @@ Two layouts share the same page shell:
 
 `public/tailwind.css` is the Tailwind source. `npm run build` compiles it to `public/tailwind.min.css`, which git ignores. `npm start` runs the build through the `prestart` script, so a local start never serves a stale stylesheet. A deploy must run the build first; `npm run deploy` does not include the build step, so run `npm run build` before `npm run deploy`.
 
-`public/_routes.json` includes every route and excludes the SVG and CSS assets. Static assets therefore do not invoke a Function.
+The Worker serves the app routes. All other requests go to the `ASSETS` binding, which serves `public/`. Workers serves a matching static asset before it invokes the Worker, so the CSS and SVG files never reach the router. The app routes have no matching asset, so the router handles them.
 
 The invoice page renders sections in this order: title, provider, client, project details, invoice details, payment options, and item lines. Payment methods render as one table per currency and location. All fields other than `currency` and `location` render as rows. Terms render in the data view but not on the page.
 
@@ -212,24 +212,24 @@ SMTP credentials are not used. Cloudflare Workers send over HTTP, so the SMTP lo
 
 The public documentation files, the README, the design document, the example environment file, commit messages, issues, and plans are not strongbox encrypted. They must describe the shape of the data and never a value. `.dev.vars.example` therefore names the variables and leaves the values empty. It does not repeat a domain, a mailbox, or a key.
 
-Production values live in the Cloudflare Pages project environment. The project does not put them in `wrangler.toml`.
+Production values live as Worker secrets. Set them with `wrangler secret put` or in the Cloudflare dashboard. The project does not put them in `wrangler.jsonc`.
 
 ## Deployment
 
-`wrangler.toml` names the Pages project `billing`. `npm run deploy` publishes `public/` and `functions/`.
+`wrangler.jsonc` names the Worker `billing`, points `main` at `worker/index.ts`, sets `assets.directory` to `./public`, and binds the assets as `ASSETS`. It also declares the `billing.bevry.me` custom domain and the matching zone route. `npm run deploy` runs the build, then `wrangler deploy`.
 
 Deployment checklist:
 
 1. Run `npm install`.
-2. Run `npm run build`.
+2. Release the `billing.bevry.me` custom domain from the old Pages project.
 3. Run `npm run deploy`.
-4. Set `SESSION_PASSWORD` and `MAILGUN_SENDING_KEY` in the Pages environment.
+4. Set `SESSION_PASSWORD` and `MAILGUN_SENDING_KEY` with `wrangler secret put`.
 5. Set `MAILGUN_DOMAIN`, `MAILGUN_LOGIN`, `EMAIL_FROM`, or `MAILGUN_BASE_URL` when the defaults do not fit the account.
 6. Confirm the sending domain is verified in Mailgun and its DNS records are current.
 
-The Pages project serves the `public/` directory. `functions/` becomes the Function router. `public/_routes.json` controls which requests reach the router.
+The Worker serves `public/` through the `ASSETS` binding and handles the app routes in `worker/index.ts`. Workers serves a matching static asset before it invokes the Worker, so the assets do not consume Worker invocations. `workers_dev` stays enabled, so the Worker answers before the custom domain cutover.
 
-The upstream Cloudflare skill treats Pages as deprecated for new projects and prefers Workers with static assets. This project stays on Pages while the current Functions layout is sufficient. A future migration would replace `functions/` with a module worker, add an assets binding, and keep the same request logic. That work is not part of the current design.
+The custom domain provisions its DNS record and certificate through Wrangler. The zone route carries the traffic and protects the hostname from another Worker's wildcard route. The old Pages project must release the custom domain first, or the two projects conflict.
 
 ## Known limits and open questions
 

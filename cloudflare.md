@@ -4,8 +4,9 @@ Local application of the bevry-vibes skills [cloudflare.md](https://github.com/b
 
 ## this project's tweaks
 
-- The project deploys as Cloudflare Pages with Pages Functions in `functions/`. Local development uses `wrangler pages dev ./public`, and deploys use `wrangler pages publish ./public`. The upstream skill treats Cloudflare Pages as deprecated for new projects. This existing project stays on Pages until a separate Workers migration.
-- The project name is `billing` in `wrangler.toml`. The static assets and the routes manifest live in `public/`. `public/_routes.json` sends every route through the Functions router except the CSS and SVG assets.
-- Production secrets are `SESSION_PASSWORD` and `MAILGUN_SENDING_KEY`. Set them in the Pages project environment. The optional Mailgun variables are `MAILGUN_DOMAIN`, `MAILGUN_LOGIN`, `EMAIL_FROM`, and `MAILGUN_BASE_URL`. Names and defaults live in `.dev.vars.example`.
+- The project deploys as a Cloudflare Worker with static assets. The entry point is `worker/index.ts`, the assets live in `public/`, and `wrangler.jsonc` declares the assets binding and the custom domain.
+- Local development uses `wrangler dev`. Deploys use `wrangler deploy`. The Worker serves the app routes and falls through to `env.ASSETS.fetch(request)` for the static assets.
+- Production secrets are `SESSION_PASSWORD` and `MAILGUN_SENDING_KEY`. Set them with `wrangler secret put`. The optional Mailgun variables are `MAILGUN_DOMAIN`, `MAILGUN_LOGIN`, `EMAIL_FROM`, and `MAILGUN_BASE_URL`. Names and defaults live in `.dev.vars.example`.
 - `.dev.vars` and `source/data/*` use the strongbox filter. Never copy plaintext values from them into a public file.
+- The Pages project still owns `billing.bevry.me` until the cutover. Release that custom domain before the first Worker deploy, or the route conflicts.
 - Email uses the Mailgun HTTP API with `api:<sending key>` Basic auth. The SMTP login and SMTP password are not used.

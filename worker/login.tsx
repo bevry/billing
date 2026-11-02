@@ -10,16 +10,16 @@ import {
 import { getEntity } from 'data/database'
 import { sendEmail } from 'lib/mailgun'
 
-export const onRequest: PagesFunction<Env> = async (context) => {
+export async function handleLogin(
+	request: Request,
+	env: Env
+): Promise<Response> {
 	// cookie
-	const userAgent = context.request.headers.get('User-Agent') || ''
-	const session = await getSession(
-		context.request,
-		context.env.SESSION_PASSWORD
-	)
+	const userAgent = request.headers.get('User-Agent') || ''
+	const session = await getSession(request, env.SESSION_PASSWORD)
 
 	// route
-	const url = new URL(context.request.url)
+	const url = new URL(request.url)
 	if (url.pathname === '/logout') {
 		// wipe session
 		await session.save({
@@ -35,10 +35,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 			status: 303,
 			headers: {
 				location: url.toString(),
-				'Set-Cookie': getCookieHeaderValue(
-					context.request,
-					session.toHeaderValue()
-				),
+				'Set-Cookie': getCookieHeaderValue(request, session.toHeaderValue()),
 			},
 		})
 	} else if (url.pathname.startsWith('/authenticate/')) {
@@ -66,10 +63,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 		return new Response(null, {
 			status: 303,
 			headers: {
-				'Set-Cookie': getCookieHeaderValue(
-					context.request,
-					session.toHeaderValue()
-				),
+				'Set-Cookie': getCookieHeaderValue(request, session.toHeaderValue()),
 				location: url.toString(),
 			},
 		})
@@ -82,12 +76,12 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 			token,
 			userAgent,
 		})
-		if (context.request.method === 'POST') {
+		if (request.method === 'POST') {
 			// check we have a token from earlier
 			if (!token) return sendError('invalid token')
 
 			// check form email
-			const formData = await context.request.formData()
+			const formData = await request.formData()
 			const email = formData.get('email') as string
 			if (!email) return sendError('invalid email')
 
@@ -104,13 +98,13 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 			})
 
 			// prep the verification url
-			const magicLink = new URL(context.request.url)
+			const magicLink = new URL(request.url)
 			magicLink.pathname = `/authenticate/${token}`
 
 			// send the magic link through Mailgun
 			try {
 				const name = entity.contact.name || entity.name
-				await sendEmail(context.env, {
+				await sendEmail(env, {
 					to: name ? `${name} <${entity.contact.email}>` : entity.contact.email,
 					subject: 'Magic link for Bevry Billing',
 					text: 'Sign in to Bevry Billing by opening this link:\n' + magicLink,
@@ -119,28 +113,19 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 				const message = error instanceof Error ? error.message : String(error)
 				console.debug(magicLink.href)
 				return sendError(`Magic Link: ${message}`, 502, {
-					'Set-Cookie': getCookieHeaderValue(
-						context.request,
-						session.toHeaderValue()
-					),
+					'Set-Cookie': getCookieHeaderValue(request, session.toHeaderValue()),
 				})
 			}
 
 			// render login form with email sent
 			return sendReact(LoginPageComponent({ email }), {
-				'Set-Cookie': getCookieHeaderValue(
-					context.request,
-					session.toHeaderValue()
-				),
+				'Set-Cookie': getCookieHeaderValue(request, session.toHeaderValue()),
 			})
 		}
 
 		// render login form
 		return sendReact(LoginPageComponent({}), {
-			'Set-Cookie': getCookieHeaderValue(
-				context.request,
-				session.toHeaderValue()
-			),
+			'Set-Cookie': getCookieHeaderValue(request, session.toHeaderValue()),
 		})
 	} else {
 		return sendError('invalid path', 404)
