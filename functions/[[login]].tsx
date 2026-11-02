@@ -8,6 +8,7 @@ import {
 	getCookieHeaderValue,
 } from 'lib/util'
 import { getEntity } from 'data/database'
+import { sendEmail } from 'lib/mailgun'
 
 export const onRequest: PagesFunction<Env> = async (context) => {
 	// cookie
@@ -98,74 +99,31 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 			await session.save({
 				entityId: entity.id,
 				verified: false,
-				token: session.token,
+				token,
 				userAgent,
 			})
 
 			// prep the verification url
 			const magicLink = new URL(context.request.url)
 			magicLink.pathname = `/authenticate/${token}`
-			// https://mailchannels.zendesk.com/hc/en-us/articles/7122849237389
-			// https://api.mailchannels.net/tx/v1/documentation
-			// https://www.cloudflare.com/en-ca/learning/dns/dns-records/dns-dkim-record/
-			// https://www.cloudflare.com/en-au/learning/dns/dns-records/dns-dmarc-record/
-			// https://en.wikipedia.org/wiki/Sender_Policy_Framework
-			// https://en.wikipedia.org/wiki/DomainKeys_Identified_Mail
-			// https://dmarc.org/wiki/FAQ
-			if (!context.env.MAILCHANNELS_PRIVATE_KEY)
-				throw new Error('Missing DKIM Private Key for Mail Channels')
-			const magicFetch = await fetch(
-				'https://api.mailchannels.net/tx/v1/send',
-				{
-					method: 'POST',
-					headers: {
-						'content-type': 'application/json',
-					},
-					body: JSON.stringify({
-						personalizations: [
-							{
-								to: [
-									{
-										email: entity.contact.email,
-										name: entity.contact.name || entity.name,
-									},
-								],
-								dkim_domain: 'bevry.me',
-								dkim_selector: 'mailchannels',
-								dkim_private_key: context.env.MAILCHANNELS_PRIVATE_KEY,
-							},
-						],
-						from: {
-							email: 'us@bevry.me',
-							name: 'Bevry Billing',
-						},
-						subject: 'Magic link for Bevry Billing',
-						content: [
-							{
-								type: 'text/plain',
-								value:
-									'Sign in to Bevry Billing by opening this link:\n' +
-									magicLink,
-							},
-						],
-					}),
-				}
-			)
 
-			// check magic link sent
-			if (!magicFetch.ok) {
-				const magicResponse = await magicFetch.text()
+			// send the magic link through Mailgun
+			try {
+				const name = entity.contact.name || entity.name
+				await sendEmail(context.env, {
+					to: name ? `${name} <${entity.contact.email}>` : entity.contact.email,
+					subject: 'Magic link for Bevry Billing',
+					text: 'Sign in to Bevry Billing by opening this link:\n' + magicLink,
+				})
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error)
 				console.debug(magicLink.href)
-				return sendError(
-					`Magic Link: ${magicFetch.status} ${magicFetch.statusText}: ${magicResponse}`,
-					magicFetch.status,
-					{
-						'Set-Cookie': getCookieHeaderValue(
-							context.request,
-							session.toHeaderValue()
-						),
-					}
-				)
+				return sendError(`Magic Link: ${message}`, 502, {
+					'Set-Cookie': getCookieHeaderValue(
+						context.request,
+						session.toHeaderValue()
+					),
+				})
 			}
 
 			// render login form with email sent
