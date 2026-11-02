@@ -1,7 +1,7 @@
 // homepage, login
 import LoginPageComponent from 'pages/Login'
 import type { Env } from 'lib/env'
-import { sendError, sendReact } from 'lib/util'
+import { getRequestOrigin, sendError, sendReact } from 'lib/util'
 import { getEntity } from 'data/database'
 import { sendEmail } from 'lib/mailgun'
 import { hashToken } from 'lib/crypto'
@@ -54,8 +54,10 @@ export async function handleLogin(
 	)
 
 	if (entity && !emailLimited) {
-		const magicLink = new URL(request.url)
-		magicLink.pathname = `/authenticate/${pending.token}`
+		const magicLink = new URL(
+			`/authenticate/${pending.token}`,
+			getRequestOrigin(request, env.PUBLIC_ORIGIN)
+		)
 		const name = entity.contact.name || entity.name
 		ctx.waitUntil(
 			sendEmail(env, {

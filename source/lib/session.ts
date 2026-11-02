@@ -185,9 +185,16 @@ export function clearSessionCookie(): string {
 }
 
 export function isSameOriginRequest(request: Request): boolean {
-	const origin = request.headers.get('origin')
-	if (origin && origin !== new URL(request.url).origin) return false
 	const site = request.headers.get('sec-fetch-site')
 	if (site && site !== 'same-origin' && site !== 'none') return false
-	return true
+
+	const origin = request.headers.get('origin')
+	if (!origin) return true
+
+	// The browser sets Sec-Fetch-Site and a page cannot forge it. Prefer it
+	// over the request URL, which a dev proxy may rewrite to the production
+	// route while the browser is still on the dev URL.
+	if (site === 'same-origin' || site === 'none') return true
+
+	return origin === new URL(request.url).origin
 }

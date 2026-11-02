@@ -18,7 +18,9 @@ export async function handleLogout(
 	}
 
 	const session = await readSession(request, env.SESSION_ENCRYPTION_KEY)
-	if (!isSignedInSession(session)) return clearSessionResponse(request)
+	if (!isSignedInSession(session)) {
+		return clearSessionResponse(request, env.PUBLIC_ORIGIN)
+	}
 
 	const formData = await request.formData()
 	const formToken = String(formData.get('logoutFormToken') || '')
@@ -26,5 +28,5 @@ export async function handleLogout(
 		return sendError('invalid form token', 400)
 	}
 
-	return clearSessionResponse(request)
+	return clearSessionResponse(request, env.PUBLIC_ORIGIN)
 }

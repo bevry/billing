@@ -52,6 +52,7 @@ npm start
 | `MAILGUN_LOGIN` | Sender mailbox. The sender name is `Bevry Billing` unless `EMAIL_FROM` is set. |
 | `EMAIL_FROM` | Full sender value, for example `Bevry Billing <mailbox@example.com>`. |
 | `MAILGUN_BASE_URL` | Mailgun API base URL. Defaults to `https://api.mailgun.net`. An EU account uses `https://api.eu.mailgun.net`. |
+| `PUBLIC_ORIGIN` | Origin used in generated links. Local development sets this to the dev server URL. |
 
 The Mailgun HTTP API uses `api:<sending key>` Basic auth. The SMTP login and SMTP password are not used, because Cloudflare Workers send through HTTP.
 

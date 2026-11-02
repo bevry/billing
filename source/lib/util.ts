@@ -24,6 +24,37 @@ export function has<T>(value: T) {
 	return value || null
 }
 
+function parseHttpOrigin(value: string | null): string | null {
+	if (!value) return null
+	try {
+		const url = new URL(value)
+		if (url.protocol === 'http:' || url.protocol === 'https:') {
+			return url.origin
+		}
+	} catch {
+		// not a URL
+	}
+	return null
+}
+
+// PUBLIC_ORIGIN pins the dev server URL. Otherwise use the browser's Origin
+// or Referer, because a dev proxy may rewrite the request URL to the
+// production route.
+export function getRequestOrigin(
+	request: Request,
+	publicOrigin?: string
+): string {
+	const configured = parseHttpOrigin(publicOrigin ?? null)
+	if (configured) return configured
+
+	const browserOrigin =
+		parseHttpOrigin(request.headers.get('origin')) ??
+		parseHttpOrigin(request.headers.get('referer'))
+	if (browserOrigin) return browserOrigin
+
+	return new URL(request.url).origin
+}
+
 export function sendError(
 	message: string,
 	status: number = 400,

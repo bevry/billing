@@ -102,6 +102,8 @@ The session is stateless. There is no session table and no server-side lookup. K
 
 The magic-link token is 32 random bytes encoded as base64url. The server stores only its SHA-256 hash. The pending cookie binds the link to the browser that requested it. A link opened in a different browser gets the browser-mismatch page, which tells the user to open the link in the original browser or request a new one.
 
+The link is built from `PUBLIC_ORIGIN` when set, then from the browser `Origin` or `Referer` header, then from the request URL. A dev proxy can rewrite the request URL to the production route, so `PUBLIC_ORIGIN` pins the dev server URL and the browser headers preserve it otherwise. The same-origin check trusts `Sec-Fetch-Site` for the same reason: the browser sets it, a page cannot forge it, and it describes the browser's origin rather than the rewritten request URL.
+
 The request endpoint returns the same check-inbox page for known and unknown emails. It sends the email through `ctx.waitUntil`, so the response time does not wait on Mailgun.
 
 The pending state expires after one hour. The signed-in state expires after three days of inactivity and is refreshed on activity. There is no absolute expiry.

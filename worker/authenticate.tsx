@@ -2,7 +2,7 @@
 import ConfirmPageComponent from 'pages/Confirm'
 import MagicLinkErrorPageComponent from 'pages/MagicLinkError'
 import type { Env } from 'lib/env'
-import { sendError, sendReact } from 'lib/util'
+import { getRequestOrigin, sendReact } from 'lib/util'
 import { getEntityById } from 'data/database'
 import { clientIp, isRateLimited } from 'lib/rate-limit'
 import {
@@ -115,8 +115,10 @@ export async function handleAuthenticatePost(
 		env.SESSION_ENCRYPTION_KEY,
 		entity.id
 	)
-	const url = new URL(request.url)
-	url.pathname = `/entity/${entity.id}`
+	const url = new URL(
+		`/entity/${entity.id}`,
+		getRequestOrigin(request, env.PUBLIC_ORIGIN)
+	)
 	return new Response(null, {
 		status: 303,
 		headers: {
@@ -150,9 +152,11 @@ export function handleLogoutMethodNotAllowed(): Response {
 	})
 }
 
-export function clearSessionResponse(request: Request): Response {
-	const url = new URL(request.url)
-	url.pathname = '/login'
+export function clearSessionResponse(
+	request: Request,
+	publicOrigin?: string
+): Response {
+	const url = new URL('/login', getRequestOrigin(request, publicOrigin))
 	return new Response(null, {
 		status: 303,
 		headers: {

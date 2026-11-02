@@ -6,6 +6,9 @@
 # openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
 SESSION_ENCRYPTION_KEY=
 
+# Origin used in generated links during local development.
+PUBLIC_ORIGIN=http://localhost:8787
+
 # Mailgun HTTP API.
 # The sending key is required.
 # The domain defaults to the domain part of MAILGUN_LOGIN.

@@ -6,6 +6,7 @@ export interface RateLimitBinding {
 
 export interface Env extends MailgunEnv {
 	SESSION_ENCRYPTION_KEY: string
+	PUBLIC_ORIGIN?: string
 	ASSETS: Fetcher
 	LOGIN_IP_RATE_LIMITER?: RateLimitBinding
 	LOGIN_EMAIL_RATE_LIMITER?: RateLimitBinding
