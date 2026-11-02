@@ -244,20 +244,20 @@ Production values live as Worker secrets. Set them with `wrangler secret put` or
 
 ## Deployment
 
-`wrangler.jsonc` names the Worker `billing`, points `main` at `worker/index.ts`, sets `assets.directory` to `./public`, and binds the assets as `ASSETS`. It also declares the `billing.bevry.me` custom domain and the matching zone route. `npm run deploy` runs the build, then `wrangler deploy`.
+`wrangler.jsonc` names the Worker `billing`, points `main` at `worker/index.ts`, sets `assets.directory` to `./public`, and binds the assets as `ASSETS`. It declares the `billing.bevry.me/*` zone route. The hostname keeps its existing proxied DNS record, so the config omits a Workers custom domain and the route carries the traffic. `npm run deploy` runs the build, then `wrangler deploy`.
 
 Deployment checklist:
 
 1. Run `npm install`.
-2. Release the `billing.bevry.me` custom domain from the old Pages project.
+2. Release the `billing.bevry.me` custom domain from the old Pages project. Leave the existing proxied DNS record in place for the Worker route.
 3. Run `npm run deploy`.
 4. Set `SESSION_ENCRYPTION_KEY` and `MAILGUN_SENDING_KEY` with `wrangler secret put`.
 5. Set `MAILGUN_DOMAIN`, `MAILGUN_LOGIN`, `EMAIL_FROM`, or `MAILGUN_BASE_URL` when the defaults do not fit the account.
 6. Confirm the sending domain is verified in Mailgun and its DNS records are current.
 
-The Worker serves `public/` through the `ASSETS` binding and handles the app routes in `worker/index.ts`. Workers serves a matching static asset before it invokes the Worker, so the assets do not consume Worker invocations. `workers_dev` stays enabled, so the Worker answers before the custom domain cutover.
+The Worker serves `public/` through the `ASSETS` binding and handles the app routes in `worker/index.ts`. Workers serves a matching static asset before it invokes the Worker, so the assets do not consume Worker invocations. `workers_dev` stays enabled, so the Worker also answers on its workers.dev hostname.
 
-The custom domain provisions its DNS record and certificate through Wrangler. The zone route carries the traffic and protects the hostname from another Worker's wildcard route. The old Pages project must release the custom domain first, or the two projects conflict.
+The zone route carries the traffic and protects the hostname from another Worker's wildcard route. A Workers custom domain is omitted because the hostname already has a proxied DNS record. Add the custom domain route after removing that record if Workers should manage the DNS record and certificate itself.
 
 ## Known limits and open questions
 
