@@ -65,7 +65,11 @@ export async function handleAuthenticateGet(
 			`verify-ip:${clientIp(request)}`
 		)
 	) {
-		return sendError('too many requests', 429)
+		return renderError(
+			'Too many sign-in attempts',
+			'Please wait a moment, then request a new link.',
+			429
+		)
 	}
 	const session = await readSession(request, env.SESSION_ENCRYPTION_KEY)
 	if (!session) return renderBrowserMismatch()
@@ -87,7 +91,11 @@ export async function handleAuthenticatePost(
 	env: Env
 ): Promise<Response> {
 	if (!isSameOriginRequest(request)) {
-		return sendError('invalid request origin', 403)
+		return renderError(
+			'This sign-in request could not be verified',
+			'Request a new link and try again.',
+			403
+		)
 	}
 	if (
 		await isRateLimited(
@@ -95,7 +103,11 @@ export async function handleAuthenticatePost(
 			`verify-ip:${clientIp(request)}`
 		)
 	) {
-		return sendError('too many requests', 429)
+		return renderError(
+			'Too many sign-in attempts',
+			'Please wait a moment, then request a new link.',
+			429
+		)
 	}
 
 	const formData = await request.formData()
