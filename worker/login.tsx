@@ -1,133 +1,76 @@
-// homepage, login, verify
+// homepage, login
 import LoginPageComponent from 'pages/Login'
 import type { Env } from 'lib/env'
-import {
-	sendError,
-	sendReact,
-	getSession,
-	getCookieHeaderValue,
-} from 'lib/util'
+import { sendError, sendReact } from 'lib/util'
 import { getEntity } from 'data/database'
 import { sendEmail } from 'lib/mailgun'
+import { hashToken } from 'lib/crypto'
+import { clientIp, isRateLimited } from 'lib/rate-limit'
+import {
+	createPendingSession,
+	getSessionCookie,
+	MAGIC_LINK_TTL_SECONDS,
+} from 'lib/session'
 
 export async function handleLogin(
 	request: Request,
-	env: Env
+	env: Env,
+	ctx: ExecutionContext
 ): Promise<Response> {
-	// cookie
-	const userAgent = request.headers.get('User-Agent') || ''
-	const session = await getSession(request, env.SESSION_PASSWORD)
-
-	// route
 	const url = new URL(request.url)
-	if (url.pathname === '/logout') {
-		// wipe session
-		await session.save({
-			entityId: '',
-			verified: false,
-			token: '',
-			userAgent,
-		})
-
-		// save session and redirect to login
-		url.pathname = '/'
-		return new Response(null, {
-			status: 303,
-			headers: {
-				location: url.toString(),
-				'Set-Cookie': getCookieHeaderValue(request, session.toHeaderValue()),
-			},
-		})
-	} else if (url.pathname.startsWith('/authenticate/')) {
-		// get token from pathname
-		const token = url.pathname.substring('/authenticate/'.length)
-
-		// validate session
-		if (userAgent !== session.userAgent)
-			return sendError(
-				'you must use the browser that you sent the magic link with'
-			)
-		if (!token || token !== session.token) return sendError('invalid token')
-		// assume user details are good, as we are the only ones who could have set it
-
-		// save successful validation
-		await session.save({
-			entityId: session.entityId,
-			verified: true,
-			token: session.token,
-			userAgent,
-		})
-
-		// save session and redirect to login
-		url.pathname = `/entity/${session.entityId}`
-		return new Response(null, {
-			status: 303,
-			headers: {
-				'Set-Cookie': getCookieHeaderValue(request, session.toHeaderValue()),
-				location: url.toString(),
-			},
-		})
-	} else if (url.pathname === '/' || url.pathname === '/login') {
-		// save new token
-		const token = session.token || Math.random().toString(36).slice(2)
-		await session.save({
-			entityId: '',
-			verified: false,
-			token,
-			userAgent,
-		})
-		if (request.method === 'POST') {
-			// check we have a token from earlier
-			if (!token) return sendError('invalid token')
-
-			// check form email
-			const formData = await request.formData()
-			const email = formData.get('email') as string
-			if (!email) return sendError('invalid email')
-
-			// check an entity exists for the email
-			const entity = email && getEntity(email as string)
-			if (!entity) return sendError('unauthorized', 401)
-
-			// save intent to validate
-			await session.save({
-				entityId: entity.id,
-				verified: false,
-				token,
-				userAgent,
-			})
-
-			// prep the verification url
-			const magicLink = new URL(request.url)
-			magicLink.pathname = `/authenticate/${token}`
-
-			// send the magic link through Mailgun
-			try {
-				const name = entity.contact.name || entity.name
-				await sendEmail(env, {
-					to: name ? `${name} <${entity.contact.email}>` : entity.contact.email,
-					subject: 'Magic link for Bevry Billing',
-					text: 'Sign in to Bevry Billing by opening this link:\n' + magicLink,
-				})
-			} catch (error) {
-				const message = error instanceof Error ? error.message : String(error)
-				console.debug(magicLink.href)
-				return sendError(`Magic Link: ${message}`, 502, {
-					'Set-Cookie': getCookieHeaderValue(request, session.toHeaderValue()),
-				})
-			}
-
-			// render login form with email sent
-			return sendReact(LoginPageComponent({ email }), {
-				'Set-Cookie': getCookieHeaderValue(request, session.toHeaderValue()),
-			})
-		}
-
-		// render login form
-		return sendReact(LoginPageComponent({}), {
-			'Set-Cookie': getCookieHeaderValue(request, session.toHeaderValue()),
-		})
-	} else {
+	if (url.pathname !== '/' && url.pathname !== '/login') {
 		return sendError('invalid path', 404)
 	}
+
+	if (request.method !== 'POST') {
+		return sendReact(LoginPageComponent({}), {
+			'Cache-Control': 'no-store',
+		})
+	}
+
+	const formData = await request.formData()
+	const email = String(formData.get('email') || '')
+		.trim()
+		.toLowerCase()
+	if (!email) return sendError('invalid email')
+
+	if (
+		await isRateLimited(
+			env.LOGIN_IP_RATE_LIMITER,
+			`login-ip:${clientIp(request)}`
+		)
+	) {
+		return sendError('too many requests', 429)
+	}
+
+	const entity = getEntity(email)
+	const pending = await createPendingSession(
+		env.SESSION_ENCRYPTION_KEY,
+		entity?.id ?? ''
+	)
+	const emailLimited = await isRateLimited(
+		env.LOGIN_EMAIL_RATE_LIMITER,
+		`login-email:${await hashToken(email)}`
+	)
+
+	if (entity && !emailLimited) {
+		const magicLink = new URL(request.url)
+		magicLink.pathname = `/authenticate/${pending.token}`
+		const name = entity.contact.name || entity.name
+		ctx.waitUntil(
+			sendEmail(env, {
+				to: name ? `${name} <${entity.contact.email}>` : entity.contact.email,
+				subject: 'Magic link for Bevry Billing',
+				text: 'Sign in to Bevry Billing by opening this link:\n' + magicLink,
+			}).catch(() => {
+				// Never log the link or the recipient. The user can request a new link.
+				console.error(JSON.stringify({ event: 'auth.link.failed' }))
+			})
+		)
+	}
+
+	return sendReact(LoginPageComponent({ email }), {
+		'Set-Cookie': getSessionCookie(pending.cookieValue, MAGIC_LINK_TTL_SECONDS),
+		'Cache-Control': 'no-store',
+	})
 }

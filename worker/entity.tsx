@@ -1,8 +1,15 @@
 // entity invoices
 import InvoicesPageComponent from 'pages/Invoices'
 import type { Env } from 'lib/env'
-import { sendError, sendReact, getSession } from 'lib/util'
+import { sendError, sendReact } from 'lib/util'
 import { getDatabase } from 'data/database'
+import {
+	getSessionCookie,
+	isSignedInSession,
+	readSession,
+	refreshSignedInSession,
+	SESSION_IDLE_TTL_SECONDS,
+} from 'lib/session'
 
 export async function handleEntity(
 	request: Request,
@@ -11,14 +18,12 @@ export async function handleEntity(
 ): Promise<Response> {
 	// validate
 	if (!entityId) return sendError('invalid param')
-	const userAgent = request.headers.get('User-Agent') || ''
-	const session = await getSession(request, env.SESSION_PASSWORD)
+	const session = await readSession(request, env.SESSION_ENCRYPTION_KEY)
 	if (
-		!session.verified ||
-		session.userAgent !== userAgent ||
+		!isSignedInSession(session) ||
+		session.expiresAt <= Date.now() ||
 		session.entityId !== entityId
 	) {
-		console.debug(JSON.stringify({ session, userAgent, entityId }, null, '  '))
 		return sendError('unauthorized', 401)
 	}
 
@@ -29,6 +34,25 @@ export async function handleEntity(
 	// confirm we have results
 	if (!entity) return sendError('invalid entity')
 
+	// refresh the idle timer on activity
+	const refreshed = await refreshSignedInSession(
+		env.SESSION_ENCRYPTION_KEY,
+		session
+	)
+
 	// render
-	return sendReact(InvoicesPageComponent({ database, entityId }))
+	return sendReact(
+		InvoicesPageComponent({
+			database,
+			entityId,
+			logoutFormToken: session.logoutFormToken,
+		}),
+		{
+			'Set-Cookie': getSessionCookie(
+				refreshed.cookieValue,
+				SESSION_IDLE_TTL_SECONDS
+			),
+			'Cache-Control': 'no-store',
+		}
+	)
 }

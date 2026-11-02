@@ -2,8 +2,9 @@
 # Production uses Worker secrets; see README.md.
 # Do not commit real values. The managed .dev.vars file is strongbox encrypted.
 
-# Encrypts the login session cookie.
-SESSION_PASSWORD=
+# Encrypts the login session cookie. Generate with:
+# openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
+SESSION_ENCRYPTION_KEY=
 
 # Mailgun HTTP API.
 # The sending key is required.
