@@ -1,0 +1,91 @@
+# Bevry Billing
+
+The private invoice portal for Bevry. A client or contractor signs in with a magic link, then reads unpaid invoices, paid invoices, invoice details, and payment options.
+
+The invoice and contact records are real. They compile into the application from strongbox-encrypted source files. Design decisions live in [DESIGN.md](./DESIGN.md).
+
+## How it works
+
+- Cloudflare Pages serves the static assets and runs the Pages Functions in `functions/`.
+- The sign-in form matches the email address to a known entity. A matching entity receives a magic link by email.
+- The link verifies the session in the same browser and opens the entity page. The page lists that entity's unpaid and paid invoices.
+- An invoice page shows the provider, the client, the project, the amount, the payments, the item lines, and the payment methods for the invoice currency.
+- The pages render on the server with React. The browser receives HTML and CSS only.
+- Invoice data has a small inheritance system. A child invoice can inherit fields from a parent, then override the fields that differ. The data module verifies the computed totals and the payment state.
+- Email delivery uses the Mailgun HTTP API.
+
+## Requirements
+
+- Node.js 18 or later and npm.
+- A Cloudflare account for deployment.
+- A Mailgun sending key for sign-in email.
+
+## Setup
+
+```bash
+npm install
+npm run build
+npm start
+```
+
+`npm start` runs the build first, then starts `wrangler pages dev ./public`. The local site listens on the port that Wrangler reports, normally `8788`.
+
+`wrangler pages dev` reads `.dev.vars`. The repository stores `.dev.vars` through strongbox, so a checkout with the strongbox filter provides the values. Without the filter, copy `.dev.vars.example` to `.dev.vars` and fill the values.
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `npm run build` | Compile `public/tailwind.css` into `public/tailwind.min.css` |
+| `npm start` | Build, then run the local Cloudflare Pages server |
+| `npm run deploy` | Publish `public/` and `functions/` to Cloudflare Pages |
+
+## Environment
+
+| Variable | Purpose |
+| --- | --- |
+| `SESSION_PASSWORD` | Encrypts the login session cookie. Required. |
+| `MAILGUN_SENDING_KEY` | Authenticates the Mailgun HTTP API. Required for sign-in email. |
+| `MAILGUN_DOMAIN` | Sending domain. Defaults to the domain part of `MAILGUN_LOGIN`. |
+| `MAILGUN_LOGIN` | Sender mailbox. The sender name is `Bevry Billing` unless `EMAIL_FROM` is set. |
+| `EMAIL_FROM` | Full sender value, for example `Bevry Billing <mailbox@example.com>`. |
+| `MAILGUN_BASE_URL` | Mailgun API base URL. Defaults to `https://api.mailgun.net`. An EU account uses `https://api.eu.mailgun.net`. |
+
+The Mailgun HTTP API uses `api:<sending key>` Basic auth. The SMTP login and SMTP password are not used, because Cloudflare Workers send through HTTP.
+
+Set the production values in the Cloudflare Pages project environment. Do not add values to a tracked file.
+
+## Secret handling
+
+`.gitattributes` sends `.dev.vars` and `source/data/*` through the strongbox filter. The committed files are encrypted. The working tree holds plaintext while the filter is available.
+
+Never copy, quote, summarise, or infer values from those files in this README, `DESIGN.md`, another public file, a commit message, an issue, or a plan. Describe the shape of the data, never its values.
+
+## Structure
+
+| Path | Purpose |
+| --- | --- |
+| `functions/` | Pages Functions for login, verification, entity pages, and invoice pages |
+| `source/pages/` | Server-rendered React page components |
+| `source/layouts/` | HTML shells for the invoice pages and the sign-in pages |
+| `source/components/` | Invoice, entity, currency, and date components |
+| `source/data/` | Invoice, entity, payment method, service, and term records (strongbox) |
+| `source/lib/` | Types, session helpers, rendering helpers, and Mailgun delivery |
+| `public/` | Static assets, routes manifest, and the compiled Tailwind stylesheet |
+| `DESIGN.md` | Evergreen design decisions and implementation details |
+| `AGENTS.md` | Instructions for AI agents |
+| `.dev.vars.example` | Names and defaults for the local environment |
+
+<!-- LICENSE/ -->
+
+## License
+
+Unless stated otherwise all works are:
+
+- Copyright &copy; [Benjamin Lupton](https://balupton.com)
+
+and licensed under:
+
+- [Reciprocal Public License 1.5](http://spdx.org/licenses/RPL-1.5.html)
+
+<!-- /LICENSE -->

@@ -1,0 +1,17 @@
+# Cloudflare Pages Functions environment for local development.
+# Production uses the Pages project environment; see README.md.
+# Do not commit real values. The managed .dev.vars file is strongbox encrypted.
+
+# Encrypts the login session cookie.
+SESSION_PASSWORD=
+
+# Mailgun HTTP API.
+# The sending key is required.
+# The domain defaults to the domain part of MAILGUN_LOGIN.
+# The sender defaults to Bevry Billing <MAILGUN_LOGIN>.
+MAILGUN_SENDING_KEY=
+MAILGUN_DOMAIN=
+MAILGUN_LOGIN=
+EMAIL_FROM=
+# EU accounts use https://api.eu.mailgun.net
+MAILGUN_BASE_URL=https://api.mailgun.net
