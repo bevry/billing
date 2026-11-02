@@ -15,11 +15,8 @@
 	"alias": {
 		"start-of-week": "./node_modules/start-of-week/edition-es2022-esm/index.js"
 	},
-	// The hostname has an existing proxied DNS record from the old Pages project,
-	// so the zone route carries the traffic without a Workers custom domain.
-	// Add { pattern: "billing.bevry.me", custom_domain: true } after removing that
-	// record if Workers should manage the DNS record itself.
-	"routes": [{ "pattern": "billing.bevry.me/*", "zone_name": "bevry.me" }],
+	// The Custom Domain creates the DNS record and certificate for the hostname.
+	"routes": [{ "pattern": "billing.bevry.me", "custom_domain": true }],
 	"workers_dev": true,
 	// Approximate per-location limits. Use a Durable Object for strict global limits.
 	"ratelimits": [

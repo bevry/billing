@@ -244,12 +244,12 @@ Production values live as Worker secrets. Set them with `wrangler secret put` or
 
 ## Deployment
 
-`wrangler.jsonc` names the Worker `billing`, points `main` at `worker/index.ts`, sets `assets.directory` to `./public`, and binds the assets as `ASSETS`. It declares the `billing.bevry.me/*` zone route. The hostname keeps its existing proxied DNS record, so the config omits a Workers custom domain and the route carries the traffic. `npm run deploy` runs the build, then `wrangler deploy`.
+`wrangler.jsonc` names the Worker `billing`, points `main` at `worker/index.ts`, sets `assets.directory` to `./public`, and binds the assets as `ASSETS`. It declares the `billing.bevry.me` Workers Custom Domain. `npm run deploy` runs the build, then `wrangler deploy`.
 
 Deployment checklist:
 
 1. Run `npm install`.
-2. Release the `billing.bevry.me` custom domain from the old Pages project. Leave the existing proxied DNS record in place for the Worker route.
+2. Remove any existing DNS record for `billing.bevry.me`. The Custom Domain creates its own DNS record and certificate.
 3. Run `npm run deploy`.
 4. Set `SESSION_ENCRYPTION_KEY` and `MAILGUN_SENDING_KEY` with `wrangler secret put`.
 5. Set `MAILGUN_DOMAIN`, `MAILGUN_LOGIN`, `EMAIL_FROM`, or `MAILGUN_BASE_URL` when the defaults do not fit the account.
@@ -257,7 +257,7 @@ Deployment checklist:
 
 The Worker serves `public/` through the `ASSETS` binding and handles the app routes in `worker/index.ts`. Workers serves a matching static asset before it invokes the Worker, so the assets do not consume Worker invocations. `workers_dev` stays enabled, so the Worker also answers on its workers.dev hostname.
 
-The zone route carries the traffic and protects the hostname from another Worker's wildcard route. A Workers custom domain is omitted because the hostname already has a proxied DNS record. Add the custom domain route after removing that record if Workers should manage the DNS record and certificate itself.
+The Custom Domain creates the DNS record, issues the certificate, and points all paths on the hostname to the Worker. An existing DNS record on the hostname must be removed before the first deploy because Cloudflare will not overwrite an externally managed record.
 
 ## Known limits and open questions
 
