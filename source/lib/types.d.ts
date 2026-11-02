@@ -57,6 +57,12 @@ export interface InvoiceItem {
 	name: string
 	amount: number
 }
+export type InvoiceItemInput =
+	| string
+	| {
+			name: string
+			amount?: number
+	  }
 export type Currency = string
 export interface InvoiceBase {
 	amount: number
@@ -79,7 +85,7 @@ export interface InvoiceBase {
 	}[]
 	rate?: {
 		amount: number
-		each: string
+		each: 'hour' | 'day' | 'week' | 'item'
 	}
 	type?: string
 	payments?: {
@@ -88,7 +94,7 @@ export interface InvoiceBase {
 		from?: string
 		currency?: string
 	}[]
-	items?: Array<InvoiceItem>
+	items?: Array<InvoiceItemInput>
 	note?: string
 	gst?: boolean
 }
@@ -102,10 +108,11 @@ export type InvoiceRaw = StrictUnion<InvoiceParent | InvoiceChild>
 interface InvoicesRaw {
 	[id: Id]: InvoiceRaw
 }
-export interface Invoice extends InvoiceBase {
+export interface Invoice extends Omit<InvoiceBase, 'items'> {
 	id: Id
 	project: Project
 	terms: Array<Id>
+	items?: Array<InvoiceItem>
 }
 export interface Invoices {
 	[id: Id]: Invoice

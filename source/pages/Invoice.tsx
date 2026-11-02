@@ -234,8 +234,8 @@ export default function InvoicePageComponent({
 							<tr>
 								<td colSpan={2}>
 									<ol className="items">
-										{invoice.items!.map((invoiceItem) => (
-											<li key={invoiceItem.name}>
+										{invoice.items!.map((invoiceItem, index) => (
+											<li key={index}>
 												<CurrencyComponent
 													amount={invoiceItem.amount}
 													currency={invoice.currency}

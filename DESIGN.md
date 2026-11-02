@@ -151,7 +151,7 @@ An invoice has:
 - `type`: `quote` or absent for a tax invoice.
 - `note`: optional free text.
 - `gst`: optional boolean.
-- `rate`, `hours`, `days`, `weeks`, `extras`, and `items`: the line-item inputs and results.
+- `rate`, `hours`, `days`, `weeks`, `extras`, and `items`: the line-item inputs and results. A rate can be per `hour`, `day`, `week`, or `item`. An item is a name string or an object with a `name` and an optional `amount`; when the rate is per item, a missing amount defaults to the rate amount.
 
 ### Inheritance
 
@@ -166,7 +166,8 @@ A missing parent throws. This makes a broken inheritance chain a deploy-time fai
 `enrich` runs once for each invoice at import:
 
 - An invalid `issued` date throws.
-- When a `rate` exists, it builds item lines from `weeks`, `days`, or `hours`, then from `extras` and explicit `items`. It sums the total and compares it to `amount`. A zero `amount` is replaced by the computed total. A non-zero amount must match the computed total after rounding, or the import throws.
+- When a `rate` exists, it builds item lines from `weeks`, `days`, `hours`, or `items` according to `rate.each`, then from `extras` and explicit `items`. A per-item rate supplies the default amount for each item. It sums the total and compares it to `amount`. A zero `amount` is replaced by the computed total. A non-zero amount must match the computed total after rounding, or the import throws.
+- Invoices without a rate normalise explicit items and require each item to have an amount.
 - A string `paid` date becomes a single payment for the full amount and sets `paid` to true. A string `paid` together with `payments` throws.
 - When `payments` exist and `paid` is null, it sums the payments and sets `paid` to whether the rounded sum equals the rounded amount. A currency mismatch throws.
 - The project name becomes an object, and `terms` becomes an array when absent.
