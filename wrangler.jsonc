@@ -10,6 +10,11 @@
 		"directory": "./public",
 		"binding": "ASSETS"
 	},
+	// daet 4 imports start-of-week, whose browser export reads window.
+	// Workers has no window, so use the plain node export instead.
+	"alias": {
+		"start-of-week": "./node_modules/start-of-week/edition-es2022-esm/index.js"
+	},
 	// The custom domain provisions DNS and the certificate.
 	// Release the Pages custom domain before the first deploy, or the two projects conflict.
 	"routes": [

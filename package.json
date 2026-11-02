@@ -5,39 +5,36 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "build": "npx tailwindcss  -c ./tailwind.config.cjs -i ./public/tailwind.css -o ./public/tailwind.min.css",
+    "build": "npx @tailwindcss/cli -i ./public/tailwind.css -o ./public/tailwind.min.css --minify",
     "prestart": "npm run build",
     "start": "wrangler dev",
     "predeploy": "npm run build",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
-    "daet": "^3.23.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "daet": "^4.7.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "simplytyped": "^3.3.0",
-    "tailwindcss": "^3.2.7",
     "webcrypt-session": "^0.5.1",
-    "zod": "^3.20.6"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261102.1",
-    "@types/react": "^18.0.28",
-    "@types/react-dom": "^18.0.11",
-    "eslint": "^8.35.0",
-    "eslint-config-bevry": "^3.27.0",
-    "eslint-config-prettier": "^8.6.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^2.8.4",
+    "@tailwindcss/cli": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-bevry": "^6.1.6",
+    "prettier": "^3.9.10",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
     "wrangler": "^4.156.1"
-  },
-  "eslintConfig": {
-    "extends": [
-      "bevry"
-    ]
   },
   "prettier": {
     "semi": false,
-    "singleQuote": true
+    "singleQuote": true,
+    "trailingComma": "es5"
   }
 }

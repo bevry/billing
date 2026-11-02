@@ -39,11 +39,11 @@ Non-functional:
 ## Stack
 
 - Cloudflare Workers with static assets from `public/` and a module worker in `worker/`.
-- React 18 rendered on the server with `renderToStaticMarkup`.
+- React 19 rendered on the server with `renderToStaticMarkup`.
 - TypeScript, with the `source` directory as the module base.
-- Tailwind CSS for the sign-in and redirect pages.
+- Tailwind CSS 4 for the sign-in and redirect pages.
 - Plain CSS in `public/index.css` for the invoice pages and the print layout.
-- `daet` for date parsing, arithmetic, formatting, and comparison.
+- `daet` 4 for date parsing, arithmetic, formatting, and comparison.
 - `webcrypt-session` for the encrypted session cookie.
 - `zod` for the session payload schema.
 - `wrangler` for local development and deployment.
@@ -172,9 +172,11 @@ Two layouts share the same page shell:
 - `layouts/Billing.tsx` loads Normalize.css and `public/index.css`. The invoice and entity pages use it.
 - `layouts/Tailwind.tsx` loads the compiled Tailwind stylesheet and the Flowbite stylesheet and script from a CDN. The sign-in and redirect pages use it.
 
-`public/tailwind.css` is the Tailwind source. `npm run build` compiles it to `public/tailwind.min.css`, which git ignores. `npm start` runs the build through the `prestart` script, so a local start never serves a stale stylesheet. A deploy must run the build first; `npm run deploy` does not include the build step, so run `npm run build` before `npm run deploy`.
+`public/tailwind.css` imports Tailwind and declares the `source` scan path. The Tailwind 4 CLI compiles it to `public/tailwind.min.css`, which git ignores. `npm start` runs the build through the `prestart` script, and `npm run deploy` runs it through the `predeploy` script, so neither serves a stale stylesheet.
 
 The Worker serves the app routes. All other requests go to the `ASSETS` binding, which serves `public/`. Workers serves a matching static asset before it invokes the Worker, so the CSS and SVG files never reach the router. The app routes have no matching asset, so the router handles them.
+
+`wrangler.jsonc` aliases `start-of-week` to its node export. `daet` 4 imports that package, and its browser export reads `window`, which Workers does not define.
 
 The invoice page renders sections in this order: title, provider, client, project details, invoice details, payment options, and item lines. Payment methods render as one table per currency and location. All fields other than `currency` and `location` render as rows. Terms render in the data view but not on the page.
 

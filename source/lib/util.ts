@@ -1,4 +1,5 @@
 import type { Invoice } from 'lib/types'
+import type { ReactElement } from 'react'
 import Daet from 'daet'
 import RedirectPageComponent from 'pages/Redirect'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -64,7 +65,7 @@ export function sendError(
 	})
 }
 
-export function sendReact(content: JSX.Element, headers: HeadersInit = {}) {
+export function sendReact(content: ReactElement, headers: HeadersInit = {}) {
 	return new Response(renderToStaticMarkup(content), {
 		status: 200,
 		headers: {

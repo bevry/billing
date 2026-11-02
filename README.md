@@ -37,6 +37,7 @@ npm start
 | Command | Purpose |
 | --- | --- |
 | `npm run build` | Compile `public/tailwind.css` into `public/tailwind.min.css` |
+| `npm run typecheck` | Run the TypeScript compiler without emitting files |
 | `npm start` | Build, then run the local Cloudflare Worker |
 | `npm run deploy` | Build, then deploy the Worker and the `public/` assets |
 

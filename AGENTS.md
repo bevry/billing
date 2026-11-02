@@ -30,6 +30,7 @@ Node.js 22 or later and npm are required.
 ```bash
 npm install          # Install dependencies
 npm run build        # Compile public/tailwind.min.css
+npm run typecheck    # Run the TypeScript compiler without emitting files
 npm start            # Build, then run wrangler dev
 npm run deploy       # Build, then deploy the Worker and public/ assets
 ```
