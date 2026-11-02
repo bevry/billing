@@ -20,7 +20,7 @@ Functional:
 - A visitor signs in with an email address and a magic link.
 - A known email address receives a link. An unknown address receives an error.
 - The link verifies the browser session that requested it.
-- A verified entity reads its own invoices only.
+- A signed-in entity reads its own invoices only.
 - The entity page lists unpaid and paid invoices, newest first, with a link to each invoice.
 - An invoice page shows the provider, the client, the project, the issued date, the due date, the amount, the payments, the item lines, the notes, and the payment methods for the invoice currency.
 - An invoice is a tax invoice by default, or a quote when its `type` is `quote`.
@@ -44,8 +44,7 @@ Non-functional:
 - Tailwind CSS 4 for the sign-in and redirect pages.
 - Plain CSS in `public/index.css` for the invoice pages and the print layout.
 - `daet` 4 for date parsing, arithmetic, formatting, and comparison.
-- `webcrypt-session` for the encrypted session cookie.
-- `zod` for the session payload schema.
+- Web Crypto (AES-GCM) for the stateless session cookie.
 - `wrangler` for local development and deployment.
 - Mailgun for email delivery, through its HTTP API.
 
@@ -61,37 +60,61 @@ Rejected alternatives:
 
 ### Session
 
-`source/lib/util.ts` creates the session with `createWebCryptSession` and a `zod` schema:
+`source/lib/session.ts` keeps all session state in one AES-GCM encrypted cookie. `source/lib/crypto.ts` provides the random tokens, SHA-256 hashes, AES-GCM encryption, and constant-time comparison.
 
+The cookie has two states:
+
+`awaiting-email-link`:
+
+- `version`: the payload version.
+- `state`: `awaiting-email-link`.
 - `entityId`: the entity that requested the link, or an empty string.
-- `verified`: whether the link has been opened.
-- `token`: the magic-link token.
-- `userAgent`: the requesting browser's `User-Agent`.
+- `magicLinkTokenHash`: the SHA-256 hash of the token in the email link.
+- `createdAt`: when the link was requested.
+- `expiresAt`: one hour after `createdAt`.
 
-The session is encrypted with `SESSION_PASSWORD`. A missing password throws at request time.
+`signed-in`:
 
-`getCookieHeaderValue` writes the cookie as `Secure; Path=/; Domain=<hostname>`. The cookie is not `HttpOnly` and has no explicit `SameSite` attribute. The current design relies on the encrypted payload and the user-agent check, not on script isolation.
+- `version`: the payload version.
+- `state`: `signed-in`.
+- `entityId`: the signed-in entity.
+- `signedInAt`: the original sign-in time.
+- `expiresAt`: three days after the last authenticated request.
+- `logoutFormToken`: a random value rendered in the logout form.
+
+The cookie stores only the hash of the magic-link token, never the token. The token is in the email link and the confirmation form.
+
+`source/lib/crypto.ts` uses AES-GCM 256 with a 32-byte key from `SESSION_ENCRYPTION_KEY`, a 12-byte random IV per encryption, and the context `billing:session:v1` as additional authenticated data. A missing or malformed key fails at request time.
+
+The cookie is `__Host-billing-session` with `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=...`. It has no `Domain` attribute. The pending state lasts one hour. The signed-in state lasts three days and is refreshed on every authenticated request.
+
+The session is stateless. There is no session table and no server-side lookup. Key rotation is the revocation control: changing `SESSION_ENCRYPTION_KEY` invalidates every session.
 
 ### Sign-in
 
-`worker/index.ts` is the router. It sends `/`, `/login`, `/logout`, and `/authenticate/*` to `worker/login.tsx`. It sends `/entity/<entityId>` to `worker/entity.tsx` and `/entity/<entityId>/invoice/<invoiceId>` to `worker/invoice.tsx`. Every other request falls through to `env.ASSETS.fetch(request)`.
+`worker/index.ts` is the router. It sends `/` and `/login` to `worker/login.tsx`, `/authenticate/<token>` and `/authenticate` to `worker/authenticate.tsx`, `/logout` to `worker/logout.tsx`, and the entity and invoice paths to their handlers. Every other request falls through to `env.ASSETS.fetch(request)`.
 
-- `GET /` and `GET /login` create or reuse a token, save the session with an empty entity, and render the form. The response sets the session cookie.
-- `POST /` and `POST /login` read the `email` form field, find the entity whose contact email matches exactly, save the entity id and token in the session, build `/authenticate/<token>`, and send the link.
-- `GET /authenticate/<token>` checks that the `User-Agent` matches the session, checks the token, sets `verified` to true, and redirects to `/entity/<entityId>` with a `303` response and a `Location` header.
-- `/logout` saves an empty session and redirects to `/` with a `303` response.
+- `GET /` and `GET /login` render the form. They do not create a cookie.
+- `POST /` and `POST /login` rate-limit the request, normalize the email, look up the entity, create the `awaiting-email-link` cookie, and send the link. Unknown emails receive the same page and status, but no email.
+- `GET /authenticate/<token>` decrypts the pending cookie, checks the token hash and expiry, and renders a confirmation page. It does not consume the link.
+- `POST /authenticate` repeats the checks and replaces the pending cookie with a `signed-in` cookie. It redirects to `/entity/<entityId>` with `303`.
+- `POST /logout` checks the `logoutFormToken` and clears the cookie with `Max-Age=0`.
 
-The token is `Math.random().toString(36).slice(2)`. The session stores it before the email is sent. The user agent check means the link works only in the browser that requested it. A user-agent change, such as a browser upgrade or a mobile handoff, makes the link fail.
+The magic-link token is 32 random bytes encoded as base64url. The server stores only its SHA-256 hash. The pending cookie binds the link to the browser that requested it. A link opened in a different browser gets the browser-mismatch page, which tells the user to open the link in the original browser or request a new one.
 
-The form returns `401 unauthorized` for an unknown email and a success page for a known email. That difference reveals whether an address is known. Rate limiting, token expiry, and single-use links are not implemented.
+The request endpoint returns the same check-inbox page for known and unknown emails. It sends the email through `ctx.waitUntil`, so the response time does not wait on Mailgun.
+
+The pending state expires after one hour. The signed-in state expires after three days of inactivity and is refreshed on activity. There is no absolute expiry.
 
 ### Authorisation
 
 The entity and invoice handlers read the session and require all three conditions:
 
-- `verified` is true.
-- The request `User-Agent` equals the session `userAgent`.
+- The cookie state is `signed-in`.
+- `expiresAt` is in the future.
 - The session `entityId` equals the `entityId` route parameter.
+
+A valid request refreshes the session cookie with a new `expiresAt` three days in the future. The `signedInAt` and `logoutFormToken` stay the same.
 
 The invoice handler also asks `getDatabase` for the invoice. The database filter accepts only invoices where the route entity is the provider or the client. A valid session for one entity cannot read another entity's invoice.
 
@@ -170,7 +193,7 @@ The current routes use `entityId`, and the invoice route also uses `invoiceId`. 
 Two layouts share the same page shell:
 
 - `layouts/Billing.tsx` loads Normalize.css and `public/index.css`. The invoice and entity pages use it.
-- `layouts/Tailwind.tsx` loads the compiled Tailwind stylesheet and the Flowbite stylesheet and script from a CDN. The sign-in and redirect pages use it.
+- `layouts/Tailwind.tsx` loads the compiled Tailwind stylesheet. The sign-in, confirmation, error, and redirect pages use it.
 
 `public/tailwind.css` imports Tailwind and declares the `source` scan path. The Tailwind 4 CLI compiles it to `public/tailwind.min.css`, which git ignores. `npm start` runs the build through the `prestart` script, and `npm run deploy` runs it through the `predeploy` script, so neither serves a stale stylesheet.
 
@@ -200,7 +223,7 @@ The invoice page renders sections in this order: title, provider, client, projec
 
 The sending domain comes from `MAILGUN_DOMAIN`. When that is absent, it comes from the domain part of `MAILGUN_LOGIN`. The sender comes from `EMAIL_FROM`. When that is absent, it is `Bevry Billing <MAILGUN_LOGIN>`. The module throws a clear error when a required value is absent.
 
-The sign-in handler sends a plain-text message with the magic link. When delivery fails, the handler writes the magic link to the console, returns `502` with the Mailgun error, and keeps the session cookie. The console write helps local diagnosis. It is not a production recovery path.
+The sign-in handler sends a plain-text message with the magic link. Delivery runs in `ctx.waitUntil`, so the response does not wait on Mailgun. A delivery failure logs only `auth.link.failed`, with no token, link, or recipient. The user can request a new link.
 
 SMTP credentials are not used. Cloudflare Workers send over HTTP, so the SMTP login and SMTP password have no role. The Mailgun sending key is the only mail credential the application reads.
 
@@ -225,7 +248,7 @@ Deployment checklist:
 1. Run `npm install`.
 2. Release the `billing.bevry.me` custom domain from the old Pages project.
 3. Run `npm run deploy`.
-4. Set `SESSION_PASSWORD` and `MAILGUN_SENDING_KEY` with `wrangler secret put`.
+4. Set `SESSION_ENCRYPTION_KEY` and `MAILGUN_SENDING_KEY` with `wrangler secret put`.
 5. Set `MAILGUN_DOMAIN`, `MAILGUN_LOGIN`, `EMAIL_FROM`, or `MAILGUN_BASE_URL` when the defaults do not fit the account.
 6. Confirm the sending domain is verified in Mailgun and its DNS records are current.
 
@@ -237,14 +260,13 @@ The custom domain provisions its DNS record and certificate through Wrangler. Th
 
 - There is no database. A data change is a source edit, a build, and a deploy.
 - There is no pagination, search, or filtering in the interface.
-- The sign-in flow reveals whether an email is known.
-- The flow has no rate limit, no token expiry, and no single-use link. The token lives in the encrypted session until the session changes.
-- The cookie is `Secure` but not `HttpOnly` and has no explicit `SameSite` value.
-- The sign-in form has no CSRF token.
-- A failed mail delivery prints the magic link to the server console and returns the Mailgun error text to the browser.
+- The session is stateless. There is no individual session revocation. Rotating `SESSION_ENCRYPTION_KEY` invalidates every session.
+- The session has no absolute expiry. An active session stays signed in until it is idle for three days or the key is rotated.
+- The magic link is browser-bound. Opening it in another browser shows the browser-mismatch page and requires a new link.
+- The magic link is not strictly single-use across a stolen copy of the pending cookie. Replay is bounded by the one-hour link expiry. A Durable Object could enforce strict single-use later.
+- There is no session inventory and no concurrent session limit.
 - The invoice page does not render the terms, and the database view does not render the unpaid total.
 - `sendRedirect` is unused.
-- The Tailwind page loads Flowbite from a CDN even though the current page does not use its components.
 - Relative due dates use `daet` arithmetic. A due date remains a display value; no reminder or late-fee process reads it.
 - Currency conversion is not modelled. A payment can carry a different currency, and the page prints that payment's currency. The paid check requires one currency when it derives the state from payments.
 - The GST note is a display rule only. The invoice amount is the stored amount.

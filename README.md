@@ -7,7 +7,8 @@ The invoice and contact records are real. They compile into the application from
 ## How it works
 
 - Cloudflare Workers serves the static assets and runs the app router in `worker/`.
-- The sign-in form matches the email address to a known entity. A matching entity receives a magic link by email.
+- The sign-in form matches the email address to a known entity. A matching entity receives a magic link by email. An unknown address receives the same page, but no email.
+- The link opens a confirmation page in the browser that requested it. The signed-in session lasts three days without activity.
 - The link verifies the session in the same browser and opens the entity page. The page lists that entity's unpaid and paid invoices.
 - An invoice page shows the provider, the client, the project, the amount, the payments, the item lines, and the payment methods for the invoice currency.
 - The pages render on the server with React. The browser receives HTML and CSS only.
@@ -45,7 +46,7 @@ npm start
 
 | Variable | Purpose |
 | --- | --- |
-| `SESSION_PASSWORD` | Encrypts the login session cookie. Required. |
+| `SESSION_ENCRYPTION_KEY` | Encrypts the stateless session cookie. 32-byte base64url. Required. |
 | `MAILGUN_SENDING_KEY` | Authenticates the Mailgun HTTP API. Required for sign-in email. |
 | `MAILGUN_DOMAIN` | Sending domain. Defaults to the domain part of `MAILGUN_LOGIN`. |
 | `MAILGUN_LOGIN` | Sender mailbox. The sender name is `Bevry Billing` unless `EMAIL_FROM` is set. |
