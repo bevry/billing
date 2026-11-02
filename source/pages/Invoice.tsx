@@ -2,6 +2,7 @@ import BillingLayoutComponent from 'layouts/Billing'
 import EntityComponent from 'components/Entity'
 import DateComponent from 'components/Date'
 import CurrencyComponent from 'components/Currency'
+import LogoutFormComponent from 'components/LogoutForm'
 import Daet from 'daet'
 import {
 	getInvoiceFullType,
@@ -15,12 +16,14 @@ export interface Props {
 	database: Database
 	entityId: Id
 	invoiceId: Id
+	logoutFormToken: string
 }
 
 export default function InvoicePageComponent({
 	database,
 	entityId,
 	invoiceId,
+	logoutFormToken,
 }: Props) {
 	const entity = database.entities[entityId]
 	const invoice = database.invoices[invoiceId]
@@ -36,8 +39,8 @@ export default function InvoicePageComponent({
 		typeof invoice.due === 'string'
 			? new Daet(invoice.due)
 			: Array.isArray(invoice.due)
-			? issued.plus(invoice.due[0], invoice.due[1])
-			: null
+				? issued.plus(invoice.due[0], invoice.due[1])
+				: null
 	const paid: Daet | boolean =
 		typeof invoice.paid === 'string'
 			? new Daet(invoice.paid)
@@ -61,6 +64,7 @@ export default function InvoicePageComponent({
 		>
 			<article className="invoice">
 				<section>
+					<LogoutFormComponent token={logoutFormToken} />
 					<h1>
 						{fullType}
 						<em>

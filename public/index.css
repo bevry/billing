@@ -112,6 +112,26 @@ article em {
 	display: block;
 }
 
+.logout-form {
+	display: flex;
+	justify-content: flex-end;
+	margin: 0;
+}
+
+.logout-form button {
+	background: transparent;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	border-radius: 0.25rem;
+	color: inherit;
+	cursor: pointer;
+	font: inherit;
+	padding: 0.35rem 0.75rem;
+}
+
+.logout-form button:hover {
+	background: rgba(0, 0, 0, 0.05);
+}
+
 .payment-complete {
 	color: darkgreen;
 	font-weight: bold;
