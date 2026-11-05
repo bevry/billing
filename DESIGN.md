@@ -100,7 +100,7 @@ The session is stateless. There is no session table and no server-side lookup. K
 - `GET /authenticate/<token>` decrypts the pending cookie, checks the token hash and expiry, and renders a confirmation page. It does not consume the link.
 - `POST /authenticate` repeats the checks and replaces the pending cookie with a `signed-in` cookie. It redirects to the stored `returnTo` path, or `/invoices/` with `303`.
 - `POST /logout` checks the `logoutFormToken` and clears the cookie with `Max-Age=0`. An optional safe `next` path sends the cleared session to `/login?next=...`.
-- `/entity/<entityId>` redirects to `/invoices/<entityId>`, and `/entity/<entityId>/invoice/<invoiceId>` redirects to `/invoice/<invoiceId>`. A signed-in request receives `308`. A signed-out request first receives the login prompt with the original legacy path as `next`, then the same redirect after sign-in.
+- `/entity/<entityId>` redirects to `/invoices/<entityId>`, and `/entity/<entityId>/invoice/<invoiceId>` redirects to `/invoices/<entityId>/invoice/<invoiceId>`. A signed-in request receives `308`. A signed-out request first receives the login prompt with the original legacy path as `next`, then the same redirect after sign-in.
 
 The magic-link token is 32 random bytes encoded as base64url. The server stores only its SHA-256 hash. The pending cookie binds the link to the browser that requested it. A link opened in a different browser gets the browser-mismatch page, which tells the user to open the link in the original browser or request a new one. A link opened while a valid signed-in session already exists redirects to its `next` path or `/invoices/`, because there is nothing to promote and the user is already authenticated.
 

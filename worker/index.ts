@@ -106,7 +106,7 @@ export default {
 				await handleLegacyRedirect(
 					request,
 					env,
-					`/invoice/${legacyInvoiceMatch[2]}`
+					`/invoices/${legacyInvoiceMatch[1]}/invoice/${legacyInvoiceMatch[2]}`
 				)
 			)
 		}
