@@ -1,8 +1,8 @@
+import { Fragment } from 'react'
 import BillingLayoutComponent from 'layouts/Billing'
 import EntityComponent from 'components/Entity'
 import DateComponent from 'components/Date'
 import CurrencyComponent from 'components/Currency'
-import LogoutFormComponent from 'components/LogoutForm'
 import Daet from 'daet'
 import {
 	getInvoiceFullType,
@@ -14,18 +14,24 @@ import {
 import { Database, Id } from 'lib/types'
 export interface Props {
 	database: Database
-	entityId: Id
 	invoiceId: Id
+	filterEntityId?: Id
 	logoutFormToken: string
 }
 
 export default function InvoicePageComponent({
 	database,
-	entityId,
 	invoiceId,
+	filterEntityId,
 	logoutFormToken,
 }: Props) {
-	const entity = database.entities[entityId]
+	const filterEntity = filterEntityId ? database.entities[filterEntityId] : null
+	const backHref = filterEntityId ? `/invoices/${filterEntityId}` : '/invoices/'
+	const backTitle = filterEntityId
+		? filterEntity
+			? `Invoices with ${filterEntity.name}`
+			: 'Invoices'
+		: 'All invoices'
 	const invoice = database.invoices[invoiceId]
 	const provider = database.entities[invoice.provider]
 	const client = database.entities[invoice.client]
@@ -41,10 +47,6 @@ export default function InvoicePageComponent({
 			: Array.isArray(invoice.due)
 				? issued.plus(invoice.due[0], invoice.due[1])
 				: null
-	const paid: Daet | boolean =
-		typeof invoice.paid === 'string'
-			? new Daet(invoice.paid)
-			: Boolean(invoice.paid)
 	const overdue = due && due.getMillisecondsFromNow() < 0
 
 	const type = getInvoiceType(invoice)
@@ -56,15 +58,15 @@ export default function InvoicePageComponent({
 			title={`${fullType} #${invoice.id} - ${client.name} - ${invoice.project.name}`}
 			nav={[
 				{
-					href: `/entity/${entityId}`,
-					title: `Invoices for ${entity.name}`,
+					href: backHref,
+					title: backTitle,
 					text: '←',
 				},
 			]}
+			logoutFormToken={logoutFormToken}
 		>
 			<article className="invoice">
 				<section>
-					<LogoutFormComponent token={logoutFormToken} />
 					<h1>
 						{fullType}
 						<em>
@@ -95,8 +97,8 @@ export default function InvoicePageComponent({
 							<tr>
 								<th>Project Services</th>
 								<td>
-									{services.map((v) => (
-										<div>{v}</div>
+									{services.map((v, index) => (
+										<div key={index}>{v}</div>
 									))}
 								</td>
 							</tr>
@@ -151,8 +153,8 @@ export default function InvoicePageComponent({
 									<th>Invoice Payments</th>
 									<td>
 										{has(invoice.payments?.length) &&
-											invoice.payments!.map((v, i) => (
-												<div>
+											invoice.payments!.map((v, index) => (
+												<div key={index}>
 													<CurrencyComponent
 														amount={v.amount}
 														currency={v.currency || invoice.currency}
@@ -207,21 +209,19 @@ export default function InvoicePageComponent({
 										</th>
 									</tr>
 								)
-								const details = Object.entries(method).map(([key, value]) => {
-									if (['currency', 'location'].includes(key) === false) {
-										return (
-											<tr key={JSON.stringify(method)}>
-												<th>{key}</th>
-												<td>{value}</td>
-											</tr>
-										)
-									}
-								})
+								const details = Object.entries(method)
+									.filter(([key]) => !['currency', 'location'].includes(key))
+									.map(([key, value]) => (
+										<tr key={key}>
+											<th>{key}</th>
+											<td>{value}</td>
+										</tr>
+									))
 								return (
-									<>
+									<Fragment key={`${method.currency}-${method.location}`}>
 										{title}
 										{details}
-									</>
+									</Fragment>
 								)
 							})}
 						</table>

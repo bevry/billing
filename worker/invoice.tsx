@@ -1,8 +1,8 @@
-// entity invoice
+// invoice detail
 import InvoicePageComponent from 'pages/Invoice'
 import type { Env } from 'lib/env'
-import { sendError, sendReact } from 'lib/util'
-import { getDatabase } from 'data/database'
+import { getRequestPath, sendLoginRedirect, sendReact } from 'lib/util'
+import { getDatabase, getEntityById } from 'data/database'
 import {
 	getSessionCookie,
 	isSignedInSession,
@@ -10,32 +10,47 @@ import {
 	refreshSignedInSession,
 	SESSION_IDLE_TTL_SECONDS,
 } from 'lib/session'
+import { handleNotFound } from './not-found'
 
 export async function handleInvoice(
 	request: Request,
 	env: Env,
-	entityId: string,
-	invoiceId: string
+	invoiceId: string,
+	filterEntityId?: string
 ): Promise<Response> {
 	// validate
-	if (!entityId || !invoiceId) return sendError('invalid param')
+	if (!invoiceId) return sendLoginRedirect(request, '/invoices/')
+
 	const session = await readSession(request, env.SESSION_ENCRYPTION_KEY)
-	if (
-		!isSignedInSession(session) ||
-		session.expiresAt <= Date.now() ||
-		session.entityId !== entityId
-	) {
-		return sendError('unauthorized', 401)
+	if (!isSignedInSession(session) || session.expiresAt <= Date.now()) {
+		return sendLoginRedirect(
+			request,
+			getRequestPath(request),
+			env.PUBLIC_ORIGIN
+		)
 	}
 
-	// fetch details for this entity
-	const database = getDatabase({ entityId, invoiceId })
-	const entity = database.entities[entityId]
-	const invoice = database.invoices[invoiceId]
+	const viewer = getEntityById(session.entityId)
+	if (!viewer) return handleNotFound(request, session)
 
-	// confirm we have results
-	if (!entity) return sendError('invalid entity')
-	if (!invoice) return sendError('invalid invoice')
+	// The database filter requires the viewer to be a party. The optional
+	// filter entity must also be a party, which keeps the contextual back link
+	// honest and stops one invoice from being framed as another entity's view.
+	const database = getDatabase({
+		viewerEntityId: session.entityId,
+		invoiceId,
+	})
+	const invoice = database.invoices[invoiceId]
+	if (!invoice) return handleNotFound(request, session)
+
+	if (filterEntityId) {
+		if (
+			!getEntityById(filterEntityId) ||
+			(invoice.provider !== filterEntityId && invoice.client !== filterEntityId)
+		) {
+			return handleNotFound(request, session)
+		}
+	}
 
 	// refresh the idle timer on activity
 	const refreshed = await refreshSignedInSession(
@@ -47,8 +62,8 @@ export async function handleInvoice(
 	return sendReact(
 		InvoicePageComponent({
 			database,
-			entityId,
 			invoiceId,
+			filterEntityId,
 			logoutFormToken: session.logoutFormToken,
 		}),
 		{

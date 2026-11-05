@@ -9,8 +9,10 @@ The invoice and contact records are real. They compile into the application from
 - Cloudflare Workers serves the static assets and runs the app router in `worker/`.
 - The sign-in form matches the email address to a known entity. A matching entity receives a magic link by email. An unknown address receives the same page, but no email.
 - The link opens a confirmation page in the browser that requested it. The signed-in session lasts three days without activity.
-- The link verifies the session in the same browser and opens the entity page. The page lists that entity's unpaid and paid invoices.
-- An invoice page shows the provider, the client, the project, the amount, the payments, the item lines, and the payment methods for the invoice currency.
+- The link verifies the session in the same browser, then opens the invoice list or the page that was originally requested.
+- `/invoices/` is the signed-in entity's default list of unpaid and paid invoices. `/invoices/<entityId>` applies an explicit filter: your own entity shows the same list with a back arrow, and another entity shows the invoices you share with it.
+- An invoice page shows the provider, the client, the project, the amount, the payments, the item lines, and the payment methods for the invoice currency. It can be opened as `/invoice/<invoiceId>`, or as `/invoices/<entityId>/invoice/<invoiceId>` to keep the filtered list as the back destination.
+- A signed-in user who cannot read the requested entity or invoice receives a styled `404` page with a sign-out option.
 - The pages render on the server with React. The browser receives HTML and CSS only.
 - Invoice data has a small inheritance system. A child invoice can inherit fields from a parent, then override the fields that differ. The data module verifies the computed totals and the payment state.
 - Email delivery uses the Mailgun HTTP API.
@@ -30,6 +32,8 @@ npm start
 ```
 
 `npm start` runs the build first, then starts `wrangler dev`. The local site listens on the port that Wrangler reports, normally `8787`.
+
+Open the site using the same host as `PUBLIC_ORIGIN`. Session cookies are host-scoped, so `localhost` and `127.0.0.1` are different sessions, and a magic link points at the configured origin.
 
 `wrangler dev` reads `.dev.vars`. The repository stores `.dev.vars` through strongbox, so a checkout with the strongbox filter provides the values. Without the filter, copy `.dev.vars.example` to `.dev.vars` and fill the values.
 
@@ -68,7 +72,7 @@ Never copy, quote, summarise, or infer values from those files in this README, `
 
 | Path | Purpose |
 | --- | --- |
-| `worker/` | Worker router and request handlers for login, verification, entity pages, and invoice pages |
+| `worker/` | Worker router and request handlers for login, verification, invoice lists, and invoice pages |
 | `source/pages/` | Server-rendered React page components |
 | `source/layouts/` | HTML shells for the invoice pages and the sign-in pages |
 | `source/components/` | Invoice, entity, currency, and date components |

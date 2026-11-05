@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import LogoutFormComponent from 'components/LogoutForm'
 import { has } from 'lib/util'
 export interface Props {
 	title: string
@@ -7,13 +8,18 @@ export interface Props {
 		text: string
 		title: string
 	}[]
+	logoutFormToken?: string
+	logoutNext?: string
 	children: ReactNode
 }
 export default function BillingLayoutComponent({
 	title,
 	nav,
+	logoutFormToken,
+	logoutNext,
 	children,
 }: Props) {
+	const showHeader = Boolean(has(nav?.length) || logoutFormToken)
 	return (
 		<html lang="en">
 			<head>
@@ -24,13 +30,20 @@ export default function BillingLayoutComponent({
 				<title>{title || 'Bevry Billing'}</title>
 			</head>
 			<body>
-				{has(nav?.length) && (
+				{showHeader && (
 					<header className="nav">
-						{nav!.map(({ href, title, text }) => (
-							<a href={href} title={title} key={href}>
-								{text}
-							</a>
-						))}
+						{has(nav?.length) && (
+							<div className="nav-back">
+								{nav!.map(({ href, title, text }) => (
+									<a href={href} title={title} key={href}>
+										{text}
+									</a>
+								))}
+							</div>
+						)}
+						{logoutFormToken && (
+							<LogoutFormComponent token={logoutFormToken} next={logoutNext} />
+						)}
 					</header>
 				)}
 				{children}

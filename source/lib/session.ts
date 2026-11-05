@@ -24,6 +24,7 @@ export interface PendingSession {
 	magicLinkTokenHash: string
 	createdAt: number
 	expiresAt: number
+	returnTo?: string
 }
 
 export interface SignedInSession {
@@ -73,7 +74,8 @@ function isSessionState(value: unknown): value is SessionState {
 	if (data.state === 'awaiting-email-link') {
 		return (
 			typeof data.magicLinkTokenHash === 'string' &&
-			isFiniteTimestamp(data.createdAt)
+			isFiniteTimestamp(data.createdAt) &&
+			(!('returnTo' in data) || typeof data.returnTo === 'string')
 		)
 	}
 	if (data.state === 'signed-in') {
@@ -112,7 +114,8 @@ export async function readSession(
 
 export async function createPendingSession(
 	secret: string,
-	entityId: string
+	entityId: string,
+	returnTo?: string
 ): Promise<IssuedPendingSession> {
 	const token = randomToken()
 	const now = Date.now()
@@ -123,6 +126,7 @@ export async function createPendingSession(
 		magicLinkTokenHash: await hashToken(token),
 		createdAt: now,
 		expiresAt: now + MAGIC_LINK_TTL_MS,
+		...(returnTo ? { returnTo } : {}),
 	}
 	return {
 		state,

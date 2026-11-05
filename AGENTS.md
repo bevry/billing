@@ -46,7 +46,7 @@ npm run deploy       # Build, then deploy the Worker and public/ assets
 | `README.md` | Project overview, commands, and public notes |
 | `package.json` | Scripts and dependency versions |
 | `wrangler.jsonc` | Worker name, entry point, assets binding, and custom domain |
-| `worker/` | Worker router and handlers for login, verification, entity pages, and invoice pages |
+| `worker/` | Worker router and handlers for login, verification, invoice lists, and invoice pages |
 | `source/pages/` | Server-rendered React page components |
 | `source/layouts/` | HTML shells for the invoice pages and the sign-in pages |
 | `source/components/` | Invoice, entity, currency, and date components |

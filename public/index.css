@@ -4,7 +4,11 @@
 
 body {
 	/* https://gist.github.com/tmslnz/bc6dcd0a6e75bf20a28b */
-	font-family: Cochin, -apple-system-body, HelveticaNeue, LucidaGrande,
+	font-family:
+		Cochin,
+		-apple-system-body,
+		HelveticaNeue,
+		LucidaGrande,
 		sans-serif;
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
@@ -84,6 +88,10 @@ tr > th[colspan]:only-child {
 article.error {
 	padding: 10vh 10vw;
 }
+
+.not-found-signout {
+	text-align: center;
+}
 article.invoices {
 	padding: 0 5vw;
 	padding-bottom: 5vh;
@@ -115,21 +123,42 @@ article em {
 .logout-form {
 	display: flex;
 	justify-content: flex-end;
-	margin: 0;
+	margin: 0 0 0 auto;
+}
+
+.nav .logout-form {
+	align-items: center;
+	height: 12vh;
 }
 
 .logout-form button {
 	background: transparent;
-	border: 1px solid rgba(0, 0, 0, 0.2);
-	border-radius: 0.25rem;
+	border: 0;
 	color: inherit;
 	cursor: pointer;
 	font: inherit;
-	padding: 0.35rem 0.75rem;
+	opacity: 0.65;
+	padding: 0.35rem 0;
 }
 
 .logout-form button:hover {
-	background: rgba(0, 0, 0, 0.05);
+	opacity: 1;
+	text-decoration: underline;
+}
+
+.logout-link {
+	display: inline;
+	height: auto;
+	margin: 0;
+	padding: 0;
+}
+
+.logout-link button {
+	display: inline;
+	color: inherit;
+	opacity: 1;
+	padding: 0;
+	text-decoration: underline;
 }
 
 .payment-complete {
@@ -195,32 +224,64 @@ article em {
 
 /* ================================================ */
 
-/* HOME ARROW BUTTON */
+/* HEADER: BACK ARROW AND SIGN OUT */
 
-.nav a {
+.nav {
 	position: absolute;
-	display: block;
 	top: 0;
 	left: 0;
+	right: 0;
+	display: flex;
+	align-items: stretch;
+	justify-content: space-between;
 	height: 10vh;
-	width: 100%;
-	font-size: 10vh;
-	padding-left: 10vw;
-	transition: padding 0.4s, color ease-in-out 0.4s;
-	margin-top: -0.5vh;
-	font-family: Asap, Noto Serif, Noto Sans, Peddana, PT Mono, Archivo Narrow,
-		Dosis, Crimson Text, Fira Sans, Comfortaa, News Cycle, Old Stanard TT, Cardo,
-		Trirong, sans-serif;
+	padding: 0 10vw;
+	z-index: 1;
 }
-.nav a,
-.nav a:visited {
+
+.nav-back {
+	display: flex;
+	align-items: center;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.nav-back a {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	height: 10vh;
+	font-size: 10vh;
+	line-height: 1;
+	transition:
+		margin 0.4s,
+		color ease-in-out 0.4s;
+	font-family:
+		Asap,
+		Noto Serif,
+		Noto Sans,
+		Peddana,
+		PT Mono,
+		Archivo Narrow,
+		Dosis,
+		Crimson Text,
+		Fira Sans,
+		Comfortaa,
+		News Cycle,
+		Old Stanard TT,
+		Cardo,
+		Trirong,
+		sans-serif;
+}
+.nav-back a,
+.nav-back a:visited {
 	text-decoration: none !important;
 	color: #ddd;
 }
-.nav a:hover {
-	padding-left: 7vw;
+.nav-back a:hover {
+	margin-left: -3vw;
 	color: #00e;
 }
-.nav a:active {
-	padding-left: 3vw;
+.nav-back a:active {
+	margin-left: -7vw;
 }

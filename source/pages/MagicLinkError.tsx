@@ -3,9 +3,14 @@ import TailwindLayoutComponent from 'layouts/Tailwind'
 export interface Props {
 	title: string
 	message: string
+	next?: string
 }
 
-export default function MagicLinkErrorPageComponent({ title, message }: Props) {
+export default function MagicLinkErrorPageComponent({
+	title,
+	message,
+	next,
+}: Props) {
 	return (
 		<TailwindLayoutComponent
 			title={title}
@@ -33,7 +38,7 @@ export default function MagicLinkErrorPageComponent({ title, message }: Props) {
 				</h2>
 				<p className="mt-2 text-sm text-gray-600">{message}</p>
 				<a
-					href="/login"
+					href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}
 					className="mt-6 inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
 				>
 					Request a new link

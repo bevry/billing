@@ -21,7 +21,7 @@ Functional:
 - A known email address receives a link. An unknown address receives an error.
 - The link verifies the browser session that requested it.
 - A signed-in entity reads its own invoices only.
-- The entity page lists unpaid and paid invoices, newest first, with a link to each invoice.
+- The invoice list page lists unpaid and paid invoices, newest first, with a link to each invoice. It can be filtered to the invoices shared with another entity.
 - An invoice page shows the provider, the client, the project, the issued date, the due date, the amount, the payments, the item lines, the notes, and the payment methods for the invoice currency.
 - An invoice is a tax invoice by default, or a quote when its `type` is `quote`.
 - An unpaid invoice shows its payment options. A paid invoice shows its payment state. An overdue invoice shows an overdue warning.
@@ -72,6 +72,7 @@ The cookie has two states:
 - `magicLinkTokenHash`: the SHA-256 hash of the token in the email link.
 - `createdAt`: when the link was requested.
 - `expiresAt`: one hour after `createdAt`.
+- `returnTo`: an optional same-origin app path to open after sign-in.
 
 `signed-in`:
 
@@ -92,17 +93,20 @@ The session is stateless. There is no session table and no server-side lookup. K
 
 ### Sign-in
 
-`worker/index.ts` is the router. It sends `/` and `/login` to `worker/login.tsx`, `/authenticate/<token>` and `/authenticate` to `worker/authenticate.tsx`, `/logout` to `worker/logout.tsx`, and the entity and invoice paths to their handlers. Every other request falls through to `env.ASSETS.fetch(request)`.
+`worker/index.ts` is the router. It sends `/` and `/login` to `worker/login.tsx`, `/authenticate/<token>` and `/authenticate` to `worker/authenticate.tsx`, `/logout` to `worker/logout.tsx`, `/invoices/` and `/invoices/<entityId>` to `worker/invoices.tsx`, and `/invoice/<invoiceId>` and `/invoices/<entityId>/invoice/<invoiceId>` to `worker/invoice.tsx`. It redirects `/invoices` to `/invoices/`. Every other request falls through to `env.ASSETS.fetch(request)`.
 
-- `GET /` and `GET /login` render the form. They do not create a cookie.
-- `POST /` and `POST /login` rate-limit the request, normalize the email, look up the entity, create the `awaiting-email-link` cookie, and send the link. Unknown emails receive the same page and status, but no email.
+- `GET /` and `GET /login` render the form. They do not create a cookie. A signed-in request redirects to the `next` path or `/invoices/`.
+- `POST /` and `POST /login` rate-limit the request, normalize the email, look up the entity, create the `awaiting-email-link` cookie, and send the link. Unknown emails receive the same page and status, but no email. A safe `next` path is stored in the pending cookie and included in the magic link.
 - `GET /authenticate/<token>` decrypts the pending cookie, checks the token hash and expiry, and renders a confirmation page. It does not consume the link.
-- `POST /authenticate` repeats the checks and replaces the pending cookie with a `signed-in` cookie. It redirects to `/entity/<entityId>` with `303`.
-- `POST /logout` checks the `logoutFormToken` and clears the cookie with `Max-Age=0`.
+- `POST /authenticate` repeats the checks and replaces the pending cookie with a `signed-in` cookie. It redirects to the stored `returnTo` path, or `/invoices/` with `303`.
+- `POST /logout` checks the `logoutFormToken` and clears the cookie with `Max-Age=0`. An optional safe `next` path sends the cleared session to `/login?next=...`.
+- `/entity/<entityId>` redirects to `/invoices/<entityId>`, and `/entity/<entityId>/invoice/<invoiceId>` redirects to `/invoice/<invoiceId>`. A signed-in request receives `308`. A signed-out request first receives the login prompt with the original legacy path as `next`, then the same redirect after sign-in.
 
-The magic-link token is 32 random bytes encoded as base64url. The server stores only its SHA-256 hash. The pending cookie binds the link to the browser that requested it. A link opened in a different browser gets the browser-mismatch page, which tells the user to open the link in the original browser or request a new one.
+The magic-link token is 32 random bytes encoded as base64url. The server stores only its SHA-256 hash. The pending cookie binds the link to the browser that requested it. A link opened in a different browser gets the browser-mismatch page, which tells the user to open the link in the original browser or request a new one. A link opened while a valid signed-in session already exists redirects to its `next` path or `/invoices/`, because there is nothing to promote and the user is already authenticated.
 
 The link is built from `PUBLIC_ORIGIN` when set, then from the browser `Origin` or `Referer` header, then from the request URL. A dev proxy can rewrite the request URL to the production route, so `PUBLIC_ORIGIN` pins the dev server URL and the browser headers preserve it otherwise. The same-origin check trusts `Sec-Fetch-Site` for the same reason: the browser sets it, a page cannot forge it, and it describes the browser's origin rather than the rewritten request URL.
+
+The return path is a same-origin path under `/invoices`, `/invoice`, or the legacy `/entity` prefixes. The login query, the form, the pending cookie, the magic link, and the logout form all pass it through `getSafeNextPath`, so a crafted absolute URL or a path outside the app cannot become an open redirect.
 
 The request endpoint returns the same check-inbox page for known and unknown emails. It sends the email through `ctx.waitUntil`, so the response time does not wait on Mailgun.
 
@@ -110,15 +114,24 @@ The pending state expires after one hour. The signed-in state expires after thre
 
 ### Authorisation
 
-The entity and invoice handlers read the session and require all three conditions:
+Every app page reads the session and requires both conditions:
 
 - The cookie state is `signed-in`.
 - `expiresAt` is in the future.
-- The session `entityId` equals the `entityId` route parameter.
+
+A request that fails either condition redirects to `/login?next=<current path>` with `303`. A signed-in request that reaches `/` or `/login` redirects to its `next` path or `/invoices/`.
+
+`/invoices/` is the default list. The session entity is its implicit filter, so there is no entity segment and no back arrow.
+
+`/invoices/<entityId>` is an explicit filter. The entity must exist, and the list contains invoices where both the viewer and the filter entity are a party. A filter for the viewer’s own entity is allowed and shows the same invoices as `/invoices/`, but the explicit filter keeps the back arrow and the contextual invoice links. A filter for another entity is accepted only when it shares at least one invoice with the viewer; otherwise the response is the `404` page.
+
+`/invoice/<invoiceId>` shows an invoice where the session entity is the provider or the client. `/invoices/<entityId>/invoice/<invoiceId>` adds the filtered context: the route entity must also be a party, and the back arrow returns to that filtered list.
+
+A signed-in request that is not a party to the invoice, or names an unknown entity or invoice, receives the same HTML `404` page. The page includes a sign-out form that preserves the current path, so the user can sign in as a different account and return. The response does not reveal whether the entity or invoice exists.
 
 A valid request refreshes the session cookie with a new `expiresAt` three days in the future. The `signedInAt` and `logoutFormToken` stay the same.
 
-The invoice handler also asks `getDatabase` for the invoice. The database filter accepts only invoices where the route entity is the provider or the client. A valid session for one entity cannot read another entity's invoice.
+The database filter always requires the viewer to be a party, and optionally requires a second entity to be a party. A valid session for one entity cannot read another entity’s invoice.
 
 ## Data model
 
@@ -182,12 +195,12 @@ The checks move data errors to startup. A bad invoice fails the function before 
 
 - It sorts invoices by `issued` with `daet`, newest first.
 - It filters by the optional `invoiceId`.
-- It filters by the optional `entityEmail`.
-- It always filters by `entityId`: the invoice must have the entity as provider or client.
+- It always requires the viewer to be the provider or the client.
+- It optionally requires a filter entity to be the provider or the client, which produces the invoices shared by the two entities.
 - It collects the provider and client entities, the payment methods for each invoice currency, the services, and the terms.
 - It records paid and unpaid invoice ids and sums the unpaid amounts.
 
-The current routes use `entityId`, and the invoice route also uses `invoiceId`. The `entityEmail` filter and the `unpaidAmount` total have no current consumer. They stay as small, tested shape for later use.
+The invoice lists use `viewerEntityId` and the optional `filterEntityId`; the invoice route uses `viewerEntityId` and `invoiceId`. The `unpaidAmount` total has no current consumer. The handlers look up the viewer and filter entities through `getEntityById`, so an entity with no invoices still renders an empty `/invoices/` list instead of a missing-entity error.
 
 ## Rendering
 
@@ -195,7 +208,7 @@ The current routes use `entityId`, and the invoice route also uses `invoiceId`. 
 
 Two layouts share the same page shell:
 
-- `layouts/Billing.tsx` loads Normalize.css and `public/index.css`. The invoice and entity pages use it.
+- `layouts/Billing.tsx` loads Normalize.css and `public/index.css`. The invoice and invoice list pages use it.
 - `layouts/Tailwind.tsx` loads the compiled Tailwind stylesheet. The sign-in, confirmation, error, and redirect pages use it.
 
 `public/tailwind.css` imports Tailwind and declares the `source` scan path. The Tailwind 4 CLI compiles it to `public/tailwind.min.css`, which git ignores. `npm start` runs the build through the `prestart` script, and `npm run deploy` runs it through the `predeploy` script, so neither serves a stale stylesheet.
@@ -204,7 +217,11 @@ The Worker serves the app routes. All other requests go to the `ASSETS` binding,
 
 `wrangler.jsonc` aliases `start-of-week` to its node export. `daet` 4 imports that package, and its browser export reads `window`, which Workers does not define.
 
-The invoice page renders sections in this order: title, provider, client, project details, invoice details, payment options, and item lines. Payment methods render as one table per currency and location. All fields other than `currency` and `location` render as rows. Terms render in the data view but not on the page.
+The invoice page renders sections in this order: title, provider, client, project details, invoice details, payment options, and item lines. Payment methods render as one table per currency and location. All fields other than `currency` and `location` render as rows. Terms render in the data view but not on the page. The provider and client names link to `/invoices/<entityId>`, which opens the filtered list for that entity.
+
+`layouts/Billing.tsx` renders the header above the article card. It holds the optional back arrow on the left and the sign-out form on the right. The sign-out form is a `POST` with the session’s `logoutFormToken`; it is not a link. The header is hidden in print. The `/invoices/` default list has no back arrow; every explicit `/invoices/<entityId>` list, including the viewer’s own, links back to `/invoices/`; an invoice opened through a filtered list links back to that list, while a canonical invoice links back to `/invoices/`.
+
+`pages/NotFound.tsx` renders the signed-in `404` page. It uses the same message for an unknown entity, an unknown invoice, and an invoice the viewer may not read. It offers the own invoice list and a sign-out link that returns to the same path after a different account signs in.
 
 `Currency` uses `Intl.NumberFormat` with `en-US` and the currency code. A `gst` invoice shows a note that the amount includes the Australian Goods and Services Tax and renders a second amount equal to 10 percent of the total. The stored amount does not change.
 
@@ -262,7 +279,7 @@ The Custom Domain creates the DNS record, issues the certificate, and points all
 ## Known limits and open questions
 
 - There is no database. A data change is a source edit, a build, and a deploy.
-- There is no pagination, search, or filtering in the interface.
+- There is no pagination, search, or directory of entities. A filtered list is reached from an entity name on an invoice page or from a URL.
 - The session is stateless. There is no individual session revocation. Rotating `SESSION_ENCRYPTION_KEY` invalidates every session.
 - The session has no absolute expiry. An active session stays signed in until it is idle for three days or the key is rotated.
 - The magic link is browser-bound. Opening it in another browser shows the browser-mismatch page and requires a new link.

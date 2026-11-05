@@ -1,5 +1,11 @@
 // Worker router: explicit paths for the app, assets for everything else.
 import type { Env } from 'lib/env'
+import {
+	getRequestPath,
+	sendLoginRedirect,
+	sendRelativeRedirect,
+} from 'lib/util'
+import { isSignedInSession, readSession } from 'lib/session'
 import { handleLogin } from './login'
 import {
 	handleAuthenticateGet,
@@ -8,12 +14,33 @@ import {
 	handleLogoutMethodNotAllowed,
 } from './authenticate'
 import { handleLogout } from './logout'
-import { handleEntity } from './entity'
+import { handleInvoices, handleInvoicesRoot } from './invoices'
 import { handleInvoice } from './invoice'
 
-const invoicePath = /^\/entity\/([^/]+)\/invoice\/([^/]+)\/?$/
-const entityPath = /^\/entity\/([^/]+)\/?$/
+const filteredInvoicePath = /^\/invoices\/([^/]+)\/invoice\/([^/]+)\/?$/
+const invoicePath = /^\/invoice\/([^/]+)\/?$/
+const invoicesPath = /^\/invoices\/([^/]+)\/?$/
+const legacyInvoicePath = /^\/entity\/([^/]+)\/invoice\/([^/]+)\/?$/
+const legacyEntityPath = /^\/entity\/([^/]+)\/?$/
 const authenticatePath = /^\/authenticate\/([^/]+)\/?$/
+
+// Preserve the original legacy URL through sign-in, then canonicalise once the
+// browser has a valid session.
+async function handleLegacyRedirect(
+	request: Request,
+	env: Env,
+	canonicalPath: string
+): Promise<Response> {
+	const session = await readSession(request, env.SESSION_ENCRYPTION_KEY)
+	if (!isSignedInSession(session) || session.expiresAt <= Date.now()) {
+		return sendLoginRedirect(
+			request,
+			getRequestPath(request),
+			env.PUBLIC_ORIGIN
+		)
+	}
+	return sendRelativeRedirect(request, canonicalPath, env.PUBLIC_ORIGIN, 308)
+}
 
 function withSecurityHeaders(response: Response): Response {
 	const headers = new Headers(response.headers)
@@ -73,17 +100,61 @@ export default {
 			)
 		}
 
-		const invoiceMatch = invoicePath.exec(path)
-		if (invoiceMatch) {
+		const legacyInvoiceMatch = legacyInvoicePath.exec(path)
+		if (legacyInvoiceMatch) {
 			return withSecurityHeaders(
-				await handleInvoice(request, env, invoiceMatch[1], invoiceMatch[2])
+				await handleLegacyRedirect(
+					request,
+					env,
+					`/invoice/${legacyInvoiceMatch[2]}`
+				)
 			)
 		}
 
-		const entityMatch = entityPath.exec(path)
-		if (entityMatch) {
+		const legacyEntityMatch = legacyEntityPath.exec(path)
+		if (legacyEntityMatch) {
 			return withSecurityHeaders(
-				await handleEntity(request, env, entityMatch[1])
+				await handleLegacyRedirect(
+					request,
+					env,
+					`/invoices/${legacyEntityMatch[1]}`
+				)
+			)
+		}
+
+		const filteredInvoiceMatch = filteredInvoicePath.exec(path)
+		if (filteredInvoiceMatch) {
+			return withSecurityHeaders(
+				await handleInvoice(
+					request,
+					env,
+					filteredInvoiceMatch[2],
+					filteredInvoiceMatch[1]
+				)
+			)
+		}
+
+		const invoiceMatch = invoicePath.exec(path)
+		if (invoiceMatch) {
+			return withSecurityHeaders(
+				await handleInvoice(request, env, invoiceMatch[1])
+			)
+		}
+
+		if (path === '/invoices') {
+			return withSecurityHeaders(
+				sendRelativeRedirect(request, '/invoices/', env.PUBLIC_ORIGIN, 308)
+			)
+		}
+
+		if (path === '/invoices/') {
+			return withSecurityHeaders(await handleInvoicesRoot(request, env))
+		}
+
+		const invoicesMatch = invoicesPath.exec(path)
+		if (invoicesMatch) {
+			return withSecurityHeaders(
+				await handleInvoices(request, env, invoicesMatch[1])
 			)
 		}
 

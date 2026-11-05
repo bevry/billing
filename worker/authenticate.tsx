@@ -2,7 +2,12 @@
 import ConfirmPageComponent from 'pages/Confirm'
 import MagicLinkErrorPageComponent from 'pages/MagicLinkError'
 import type { Env } from 'lib/env'
-import { getRequestOrigin, sendReact } from 'lib/util'
+import {
+	getRequestOrigin,
+	getSafeNextPath,
+	sendReact,
+	sendRelativeRedirect,
+} from 'lib/util'
 import { getEntityById } from 'data/database'
 import { clientIp, isRateLimited } from 'lib/rate-limit'
 import {
@@ -11,6 +16,7 @@ import {
 	getSessionCookie,
 	isPendingSession,
 	isSameOriginRequest,
+	isSignedInSession,
 	readSession,
 	SESSION_IDLE_TTL_SECONDS,
 	verifyPendingSession,
@@ -24,33 +30,40 @@ const noStoreHeaders = {
 function renderError(
 	title: string,
 	message: string,
-	status: number = 400
+	status = 400,
+	next = ''
 ): Response {
 	return sendReact(
-		MagicLinkErrorPageComponent({ title, message }),
+		MagicLinkErrorPageComponent({ title, message, next }),
 		noStoreHeaders,
 		status
 	)
 }
 
-function renderBrowserMismatch(): Response {
+function renderBrowserMismatch(next = ''): Response {
 	return renderError(
 		'Open this link in the browser where you requested it',
-		'This sign-in link is tied to the browser that requested it. Open the link in that browser, or request a new link in this browser.'
+		'This sign-in link is tied to the browser that requested it. Open the link in that browser, or request a new link in this browser.',
+		400,
+		next
 	)
 }
 
-function renderInvalid(): Response {
+function renderInvalid(next = ''): Response {
 	return renderError(
 		'This sign-in link is invalid or has already been used',
-		'Request a new link to continue.'
+		'Request a new link to continue.',
+		400,
+		next
 	)
 }
 
-function renderExpired(): Response {
+function renderExpired(next = ''): Response {
 	return renderError(
 		'This sign-in link has expired',
-		'Request a new link to continue.'
+		'Request a new link to continue.',
+		400,
+		next
 	)
 }
 
@@ -59,6 +72,9 @@ export async function handleAuthenticateGet(
 	env: Env,
 	token: string
 ): Promise<Response> {
+	const url = new URL(request.url)
+	const queryNext = getSafeNextPath(url.searchParams.get('next'), '')
+
 	if (
 		await isRateLimited(
 			env.VERIFY_IP_RATE_LIMITER,
@@ -68,17 +84,35 @@ export async function handleAuthenticateGet(
 		return renderError(
 			'Too many sign-in attempts',
 			'Please wait a moment, then request a new link.',
-			429
+			429,
+			queryNext
 		)
 	}
 	const session = await readSession(request, env.SESSION_ENCRYPTION_KEY)
-	if (!session) return renderBrowserMismatch()
-	if (!isPendingSession(session)) return renderInvalid()
-	if (session.expiresAt <= Date.now()) return renderExpired()
-	if (!(await verifyPendingSession(session, token))) return renderInvalid()
+	if (!session) return renderBrowserMismatch(queryNext)
+
+	// A magic link opened while already signed in is not an error. The link
+	// cannot be consumed because the browser no longer holds the pending
+	// session, but the existing session is enough to continue.
+	if (isSignedInSession(session)) {
+		if (session.expiresAt > Date.now()) {
+			return sendRelativeRedirect(
+				request,
+				queryNext || '/invoices/',
+				env.PUBLIC_ORIGIN
+			)
+		}
+		return renderExpired(queryNext)
+	}
+
+	if (!isPendingSession(session)) return renderInvalid(queryNext)
+
+	const next = getSafeNextPath(session.returnTo, queryNext)
+	if (session.expiresAt <= Date.now()) return renderExpired(next)
+	if (!(await verifyPendingSession(session, token))) return renderInvalid(next)
 
 	const entity = getEntityById(session.entityId)
-	if (!entity) return renderInvalid()
+	if (!entity) return renderInvalid(next)
 
 	return sendReact(
 		ConfirmPageComponent({ token, entityName: entity.name }),
@@ -116,19 +150,29 @@ export async function handleAuthenticatePost(
 
 	const session = await readSession(request, env.SESSION_ENCRYPTION_KEY)
 	if (!session) return renderBrowserMismatch()
+
+	if (isSignedInSession(session)) {
+		if (session.expiresAt > Date.now()) {
+			return sendRelativeRedirect(request, '/invoices/', env.PUBLIC_ORIGIN)
+		}
+		return renderExpired()
+	}
+
 	if (!isPendingSession(session)) return renderInvalid()
-	if (session.expiresAt <= Date.now()) return renderExpired()
-	if (!(await verifyPendingSession(session, token))) return renderInvalid()
+
+	const next = getSafeNextPath(session.returnTo, '')
+	if (session.expiresAt <= Date.now()) return renderExpired(next)
+	if (!(await verifyPendingSession(session, token))) return renderInvalid(next)
 
 	const entity = getEntityById(session.entityId)
-	if (!entity) return renderInvalid()
+	if (!entity) return renderInvalid(next)
 
 	const signedIn = await createSignedInSession(
 		env.SESSION_ENCRYPTION_KEY,
 		entity.id
 	)
 	const url = new URL(
-		`/entity/${entity.id}`,
+		next || '/invoices/',
 		getRequestOrigin(request, env.PUBLIC_ORIGIN)
 	)
 	return new Response(null, {
@@ -166,9 +210,12 @@ export function handleLogoutMethodNotAllowed(): Response {
 
 export function clearSessionResponse(
 	request: Request,
-	publicOrigin?: string
+	publicOrigin?: string,
+	next?: string
 ): Response {
 	const url = new URL('/login', getRequestOrigin(request, publicOrigin))
+	const safeNext = getSafeNextPath(next, '')
+	if (safeNext) url.searchParams.set('next', safeNext)
 	return new Response(null, {
 		status: 303,
 		headers: {

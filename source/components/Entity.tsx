@@ -9,7 +9,9 @@ export default function EntityComponent({ entity }: Props) {
 			<tbody>
 				<tr>
 					<th>Name</th>
-					<td>{entity.name}</td>
+					<td>
+						<a href={`/invoices/${entity.id}`}>{entity.name}</a>
+					</td>
 				</tr>
 				{has(entity.website) && (
 					<tr>

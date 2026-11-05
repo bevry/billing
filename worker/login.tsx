@@ -1,7 +1,13 @@
 // homepage, login
 import LoginPageComponent from 'pages/Login'
 import type { Env } from 'lib/env'
-import { getRequestOrigin, sendError, sendReact } from 'lib/util'
+import {
+	getRequestOrigin,
+	getSafeNextPath,
+	sendError,
+	sendReact,
+	sendRelativeRedirect,
+} from 'lib/util'
 import { getEntity } from 'data/database'
 import { sendEmail } from 'lib/mailgun'
 import { hashToken } from 'lib/crypto'
@@ -9,7 +15,9 @@ import { clientIp, isRateLimited } from 'lib/rate-limit'
 import {
 	createPendingSession,
 	getSessionCookie,
+	isSignedInSession,
 	MAGIC_LINK_TTL_SECONDS,
+	readSession,
 } from 'lib/session'
 
 export async function handleLogin(
@@ -22,13 +30,24 @@ export async function handleLogin(
 		return sendError('invalid path', 404)
 	}
 
+	const queryNext = getSafeNextPath(url.searchParams.get('next'), '')
+	const session = await readSession(request, env.SESSION_ENCRYPTION_KEY)
+	if (isSignedInSession(session) && session.expiresAt > Date.now()) {
+		return sendRelativeRedirect(
+			request,
+			queryNext || '/invoices/',
+			env.PUBLIC_ORIGIN
+		)
+	}
+
 	if (request.method !== 'POST') {
-		return sendReact(LoginPageComponent({}), {
+		return sendReact(LoginPageComponent({ next: queryNext }), {
 			'Cache-Control': 'no-store',
 		})
 	}
 
 	const formData = await request.formData()
+	const next = getSafeNextPath(String(formData.get('next') || ''), queryNext)
 	const email = String(formData.get('email') || '')
 		.trim()
 		.toLowerCase()
@@ -46,7 +65,8 @@ export async function handleLogin(
 	const entity = getEntity(email)
 	const pending = await createPendingSession(
 		env.SESSION_ENCRYPTION_KEY,
-		entity?.id ?? ''
+		entity?.id ?? '',
+		next
 	)
 	const emailLimited = await isRateLimited(
 		env.LOGIN_EMAIL_RATE_LIMITER,
@@ -58,12 +78,15 @@ export async function handleLogin(
 			`/authenticate/${pending.token}`,
 			getRequestOrigin(request, env.PUBLIC_ORIGIN)
 		)
+		if (next) magicLink.searchParams.set('next', next)
 		const name = entity.contact.name || entity.name
 		ctx.waitUntil(
 			sendEmail(env, {
 				to: name ? `${name} <${entity.contact.email}>` : entity.contact.email,
 				subject: 'Magic link for Bevry Billing',
-				text: 'Sign in to Bevry Billing by opening this link:\n' + magicLink,
+				text:
+					'Sign in to Bevry Billing by opening this link:\n' +
+					magicLink.toString(),
 			}).catch(() => {
 				// Never log the link or the recipient. The user can request a new link.
 				console.error(JSON.stringify({ event: 'auth.link.failed' }))
@@ -71,7 +94,7 @@ export async function handleLogin(
 		)
 	}
 
-	return sendReact(LoginPageComponent({ email }), {
+	return sendReact(LoginPageComponent({ email, next }), {
 		'Set-Cookie': getSessionCookie(pending.cookieValue, MAGIC_LINK_TTL_SECONDS),
 		'Cache-Control': 'no-store',
 	})
