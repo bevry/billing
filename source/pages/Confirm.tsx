@@ -2,10 +2,10 @@ import TailwindLayoutComponent from 'layouts/Tailwind'
 
 export interface Props {
 	token: string
-	entityName: string
+	identityName: string
 }
 
-export default function ConfirmPageComponent({ token, entityName }: Props) {
+export default function ConfirmPageComponent({ token, identityName }: Props) {
 	return (
 		<TailwindLayoutComponent
 			title="Confirm sign in to Bevry Billing"
@@ -16,7 +16,7 @@ export default function ConfirmPageComponent({ token, entityName }: Props) {
 					Sign in to Bevry Billing
 				</h2>
 				<p className="mt-2 text-center text-sm text-gray-600">
-					Continue as <span className="font-medium">{entityName}</span>.
+					Continue as <span className="font-medium">{identityName}</span>.
 				</p>
 				<form className="mt-8" action="/authenticate" method="POST">
 					<input type="hidden" name="token" value={token} />

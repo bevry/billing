@@ -9,6 +9,7 @@ import {
 	sendRelativeRedirect,
 } from 'lib/util'
 import { getEntity } from 'data/database'
+import { normaliseEmail } from 'lib/email'
 import { sendEmail } from 'lib/mailgun'
 import { hashToken } from 'lib/crypto'
 import { clientIp, isRateLimited } from 'lib/rate-limit'
@@ -48,9 +49,7 @@ export async function handleLogin(
 
 	const formData = await request.formData()
 	const next = getSafeNextPath(String(formData.get('next') || ''), queryNext)
-	const email = String(formData.get('email') || '')
-		.trim()
-		.toLowerCase()
+	const email = normaliseEmail(String(formData.get('email') || ''))
 	if (!email) return sendError('invalid email')
 
 	if (
@@ -66,6 +65,7 @@ export async function handleLogin(
 	const pending = await createPendingSession(
 		env.SESSION_ENCRYPTION_KEY,
 		entity?.id ?? '',
+		email,
 		next
 	)
 	const emailLimited = await isRateLimited(
@@ -73,16 +73,16 @@ export async function handleLogin(
 		`login-email:${await hashToken(email)}`
 	)
 
-	if (entity && !emailLimited) {
+	if (!emailLimited) {
 		const magicLink = new URL(
 			`/authenticate/${pending.token}`,
 			getRequestOrigin(request, env.PUBLIC_ORIGIN)
 		)
 		if (next) magicLink.searchParams.set('next', next)
-		const name = entity.contact.name || entity.name
+		const name = entity?.contact.name || entity?.name
 		ctx.waitUntil(
 			sendEmail(env, {
-				to: name ? `${name} <${entity.contact.email}>` : entity.contact.email,
+				to: name ? `${name} <${email}>` : email,
 				subject: 'Magic link for Bevry Billing',
 				text:
 					'Sign in to Bevry Billing by opening this link:\n' +

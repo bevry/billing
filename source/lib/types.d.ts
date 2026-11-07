@@ -26,6 +26,7 @@ export interface EntityRaw {
 	contact: {
 		name: string
 		email: string
+		additionalEmails?: string[]
 		phone?: string
 	}
 	verification?: {

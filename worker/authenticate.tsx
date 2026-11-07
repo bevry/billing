@@ -8,7 +8,7 @@ import {
 	sendReact,
 	sendRelativeRedirect,
 } from 'lib/util'
-import { getEntityById } from 'data/database'
+import { getEntity, getEntityById } from 'data/database'
 import { clientIp, isRateLimited } from 'lib/rate-limit'
 import {
 	clearSessionCookie,
@@ -111,11 +111,14 @@ export async function handleAuthenticateGet(
 	if (session.expiresAt <= Date.now()) return renderExpired(next)
 	if (!(await verifyPendingSession(session, token))) return renderInvalid(next)
 
-	const entity = getEntityById(session.entityId)
-	if (!entity) return renderInvalid(next)
+	const entity =
+		getEntityById(session.entityId) ??
+		(session.email ? getEntity(session.email) : null)
+	const identityName = entity?.name ?? session.email
+	if (!identityName) return renderInvalid(next)
 
 	return sendReact(
-		ConfirmPageComponent({ token, entityName: entity.name }),
+		ConfirmPageComponent({ token, identityName }),
 		noStoreHeaders
 	)
 }
@@ -164,12 +167,16 @@ export async function handleAuthenticatePost(
 	if (session.expiresAt <= Date.now()) return renderExpired(next)
 	if (!(await verifyPendingSession(session, token))) return renderInvalid(next)
 
-	const entity = getEntityById(session.entityId)
-	if (!entity) return renderInvalid(next)
+	const entity =
+		getEntityById(session.entityId) ??
+		(session.email ? getEntity(session.email) : null)
+	const email = session.email ?? entity?.contact.email
+	if (!email) return renderInvalid(next)
 
 	const signedIn = await createSignedInSession(
 		env.SESSION_ENCRYPTION_KEY,
-		entity.id
+		entity?.id ?? '',
+		email
 	)
 	const url = new URL(
 		next || '/invoices/',

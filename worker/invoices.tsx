@@ -18,9 +18,9 @@ async function renderInvoices(
 	request: Request,
 	env: Env,
 	session: SignedInSession,
-	viewer: Entity,
-	filterEntity: Entity | null
+	options: { viewer: Entity | null; filterEntity: Entity | null }
 ): Promise<Response> {
+	const { viewer, filterEntity } = options
 	const database = getDatabase({
 		viewerEntityId: session.entityId,
 		filterEntityId: filterEntity?.id,
@@ -28,10 +28,12 @@ async function renderInvoices(
 
 	// An explicit filter for another entity must share at least one invoice.
 	// A filter for the viewer is allowed to be empty, exactly like `/invoices/`.
+	// A guest has no entity to filter.
 	if (
 		filterEntity &&
-		filterEntity.id !== viewer.id &&
-		Object.keys(database.invoices).length === 0
+		(!viewer ||
+			(filterEntity.id !== viewer.id &&
+				Object.keys(database.invoices).length === 0))
 	) {
 		return handleNotFound(request, session)
 	}
@@ -42,18 +44,13 @@ async function renderInvoices(
 		session
 	)
 
-	const page = filterEntity
-		? InvoicesPageComponent({
-				database,
-				viewer,
-				filterEntity,
-				logoutFormToken: session.logoutFormToken,
-			})
-		: InvoicesPageComponent({
-				database,
-				viewer,
-				logoutFormToken: session.logoutFormToken,
-			})
+	const page = InvoicesPageComponent({
+		database,
+		viewer,
+		viewerEmail: session.email,
+		...(filterEntity ? { filterEntity } : {}),
+		logoutFormToken: session.logoutFormToken,
+	})
 
 	return sendReact(page, {
 		'Set-Cookie': getSessionCookie(
@@ -76,9 +73,17 @@ export async function handleInvoicesRoot(
 	}
 
 	const viewer = getEntityById(session.entityId)
-	if (!viewer) return handleNotFound(request, session)
+	if (!viewer) {
+		if (session.entityId || !session.email) {
+			return handleNotFound(request, session)
+		}
+		return renderInvoices(request, env, session, {
+			viewer: null,
+			filterEntity: null,
+		})
+	}
 
-	return renderInvoices(request, env, session, viewer, null)
+	return renderInvoices(request, env, session, { viewer, filterEntity: null })
 }
 
 // An explicit filter. This includes the viewer's own entity, which is how the
@@ -107,5 +112,5 @@ export async function handleInvoices(
 	const filterEntity = getEntityById(requestedEntityId)
 	if (!filterEntity) return handleNotFound(request, session)
 
-	return renderInvoices(request, env, session, viewer, filterEntity)
+	return renderInvoices(request, env, session, { viewer, filterEntity })
 }
