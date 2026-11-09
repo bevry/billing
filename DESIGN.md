@@ -114,7 +114,7 @@ The magic link goes to the normalised address that submitted the form, not the p
 
 An unknown address receives a plain-text notice with the subject `Your login to billing.bevry.me`. The notice states that the address is not attached to any invoices and asks the reader to use the existing communication channel. It contains no link.
 
-The Turnstile token is checked with the Siteverify API before any email send. The handler rejects a missing, invalid, expired, or reused token with a `403` page and no pending cookie. The per-IP rate limit runs before the check, and the per-address rate limit runs after it. The handler fails closed when the configuration is missing or Siteverify is unavailable.
+The Turnstile token is checked with the Siteverify API before any email send. The response must report success, the `login` action, and a hostname in `TURNSTILE_HOSTNAMES`. The handler rejects a missing, invalid, expired, or reused token with a `403` page and no pending cookie. The per-IP rate limit runs before the check, and the per-address rate limit runs after it. The handler fails closed when the configuration is missing or Siteverify is unavailable.
 
 The request endpoint returns the same check-inbox page for known and unknown emails. It sends the email through `ctx.waitUntil`, so the response time does not wait on Mailgun.
 
@@ -282,7 +282,7 @@ Deployment checklist:
 
 1. Run `npm install`.
 2. Create a Cloudflare Turnstile widget for `billing.bevry.me`.
-3. Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` with `wrangler secret put`.
+3. Set `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, and `TURNSTILE_HOSTNAMES` with `wrangler secret put`.
 4. Remove any existing DNS record for `billing.bevry.me`. The Custom Domain creates its own DNS record and certificate.
 5. Run `npm run deploy`.
 6. Set `SESSION_ENCRYPTION_KEY` and `MAILGUN_SENDING_KEY` with `wrangler secret put`.
@@ -307,6 +307,7 @@ The Custom Domain creates the DNS record, issues the certificate, and points all
 - The notice for an unknown address does not create a ticket or track a request. It only tells the reader to use the existing communication channel.
 - The sign-in page requires JavaScript for Turnstile. A visitor without JavaScript cannot sign in.
 - Turnstile is a third-party dependency. A Siteverify failure blocks sign-in because the handler fails closed.
+- The production `TURNSTILE_HOSTNAMES` value must not include `localhost` or `127.0.0.1`.
 - `sendRedirect` is unused.
 - Relative due dates use `daet` arithmetic. A due date remains a display value; no reminder or late-fee process reads it.
 - Currency conversion is not modelled. A payment can carry a different currency, and the page prints that payment's currency. The paid check requires one currency when it derives the state from payments.

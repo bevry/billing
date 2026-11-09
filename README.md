@@ -38,7 +38,7 @@ npm start
 
 Open the site using the same host as `PUBLIC_ORIGIN`. Session cookies are host-scoped, so `localhost` and `127.0.0.1` are different sessions, and a magic link points at the configured origin.
 
-`wrangler dev` reads `.dev.vars`. The repository stores `.dev.vars` through strongbox, so a checkout with the strongbox filter provides the values. Without the filter, copy `.dev.vars.example` to `.dev.vars` and fill the values. Use the Cloudflare test keys for local Turnstile development; they do not protect production.
+`wrangler dev` reads `.dev.vars`. The repository stores `.dev.vars` through strongbox, so a checkout with the strongbox filter provides the values. Without the filter, copy `.dev.vars.example` to `.dev.vars` and fill the values. Use the real Turnstile widget for local development. The test keys do not return the action and hostname that the server checks.
 
 ## Commands
 
@@ -56,6 +56,7 @@ Open the site using the same host as `PUBLIC_ORIGIN`. Session cookies are host-s
 | `SESSION_ENCRYPTION_KEY` | Encrypts the stateless session cookie. 32-byte base64url. Required. |
 | `TURNSTILE_SITE_KEY` | Public site key for the Cloudflare Turnstile widget. Required. |
 | `TURNSTILE_SECRET_KEY` | Server key for Turnstile token verification. Required. |
+| `TURNSTILE_HOSTNAMES` | Comma-separated hostnames accepted from Siteverify. Required. Production must not include local hostnames. |
 | `MAILGUN_SENDING_KEY` | Authenticates the Mailgun HTTP API. Required for sign-in email. |
 | `MAILGUN_DOMAIN` | Sending domain. Defaults to the domain part of `MAILGUN_LOGIN`. |
 | `MAILGUN_LOGIN` | Sender mailbox. The sender name is `Bevry Billing` unless `EMAIL_FROM` is set. |

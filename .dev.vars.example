@@ -4,10 +4,11 @@
 
 # Cloudflare Turnstile anti-bot challenge for sign-in.
 # Create a widget in the Cloudflare dashboard.
-# Local development can use the test keys:
-# https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+# The hostname list must match the hostname that Siteverify returns.
+# The test keys do not return the action and hostname that the server checks.
 TURNSTILE_SITE_KEY=
 TURNSTILE_SECRET_KEY=
+TURNSTILE_HOSTNAMES=localhost,127.0.0.1
 
 # Encrypts the login session cookie. Generate with:
 # openssl rand -base64 32 | tr '+/' '-_' | tr -d '='

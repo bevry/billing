@@ -3,19 +3,39 @@
 export interface TurnstileEnv {
 	TURNSTILE_SITE_KEY?: string
 	TURNSTILE_SECRET_KEY?: string
+	TURNSTILE_HOSTNAMES?: string
 }
 
 const SITEVERIFY_URL =
 	'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+const EXPECTED_ACTION = 'login'
 const MAX_TOKEN_LENGTH = 2048
 
 /**
- * Return true when both Turnstile values are present.
+ * Read the approved hostnames from the environment.
+ * @param env The environment with the hostname list.
+ * @returns The lowercased hostname set.
+ */
+function getExpectedHostnames(env: TurnstileEnv): Set<string> {
+	return new Set(
+		(env.TURNSTILE_HOSTNAMES ?? '')
+			.split(',')
+			.map((hostname) => hostname.trim().toLowerCase())
+			.filter(Boolean)
+	)
+}
+
+/**
+ * Return true when the Turnstile values and hostnames are present.
  * @param env The environment with the Turnstile values.
- * @returns True when both values are present.
+ * @returns True when the configuration is complete.
  */
 export function hasTurnstileConfig(env: TurnstileEnv): boolean {
-	return Boolean(env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY)
+	return Boolean(
+		env.TURNSTILE_SITE_KEY &&
+		env.TURNSTILE_SECRET_KEY &&
+		getExpectedHostnames(env).size
+	)
 }
 
 /**
@@ -32,6 +52,8 @@ export async function verifyTurnstile(
 ): Promise<boolean> {
 	if (!env.TURNSTILE_SECRET_KEY) return false
 	if (!token || token.length > MAX_TOKEN_LENGTH) return false
+	const expectedHostnames = getExpectedHostnames(env)
+	if (expectedHostnames.size === 0) return false
 
 	const body = new FormData()
 	body.append('secret', env.TURNSTILE_SECRET_KEY)
@@ -46,12 +68,19 @@ export async function verifyTurnstile(
 		})
 		if (!response.ok) return false
 		const result: unknown = await response.json()
-		return (
-			typeof result === 'object' &&
-			result !== null &&
-			'success' in result &&
-			result.success === true
-		)
+		if (
+			typeof result !== 'object' ||
+			result === null ||
+			!('success' in result) ||
+			result.success !== true ||
+			!('action' in result) ||
+			result.action !== EXPECTED_ACTION ||
+			!('hostname' in result) ||
+			typeof result.hostname !== 'string'
+		) {
+			return false
+		}
+		return expectedHostnames.has(result.hostname.toLowerCase())
 	} catch {
 		return false
 	}
