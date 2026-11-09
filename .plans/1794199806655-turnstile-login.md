@@ -34,9 +34,10 @@ The project gains two environment values:
 
 - `TURNSTILE_SITE_KEY`: the public site key for the widget.
 - `TURNSTILE_SECRET_KEY`: the server key for Siteverify.
-- `TURNSTILE_HOSTNAMES`: the comma-separated hostnames that Siteverify must report.
 
 The values are absent in the local environment and in the production Worker secrets. The implementation fails closed with a server error when a value is absent. The project cannot deploy this change until the values are set.
+
+The expected hostname comes from the browser origin. The handler uses `PUBLIC_ORIGIN` when set, then the browser `Origin` or `Referer` header, then the request URL. No separate hostname value is needed.
 
 Use the real widget for local development. The Cloudflare test keys do not return the action and hostname that the server checks, so they cannot pass the full verification contract.
 
@@ -47,7 +48,7 @@ Use the real widget for local development. The Cloudflare test keys do not retur
 1. Parse the form and normalise the email.
 2. Apply the per-IP rate limit.
 3. Read `cf-turnstile-response`.
-4. Verify the token with Siteverify, including the `login` action and the approved hostname.
+4. Verify the token with Siteverify, including the `login` action and the browser hostname.
 5. On failure, render the sign-in page with an error and return `403`. No email and no pending cookie.
 6. On success, look up the entity.
 7. Create the pending session.
@@ -55,7 +56,7 @@ Use the real widget for local development. The Cloudflare test keys do not retur
 9. Send the magic link or the notice email.
 10. Render the check-inbox page with the pending cookie.
 
-The Siteverify request uses `secret`, `response`, and `remoteip`. The response must report success, the `login` action, and a hostname in `TURNSTILE_HOSTNAMES`. The token has a maximum length of 2048 characters. The request aborts after ten seconds. A network failure counts as a failed challenge. The production hostname list must not include local hostnames.
+The Siteverify request uses `secret`, `response`, and `remoteip`. The response must report success, the `login` action, and the hostname of the browser origin. The token has a maximum length of 2048 characters. The request aborts after ten seconds. A network failure counts as a failed challenge.
 
 ## Content Security Policy
 
@@ -87,14 +88,14 @@ The Turnstile widget renders inside an iframe. The page still uses server render
 | `worker/login.tsx`        | Check the configuration, verify the token, and block email sends on failure.                |
 | `worker/index.ts`         | Add the Turnstile origins to the Content Security Policy.                                   |
 | `source/pages/Login.tsx`  | Add the widget, the error message, and the sent state.                                      |
-| `.dev.vars.example`       | Name the three Turnstile values and the local hostnames.                                    |
+| `.dev.vars.example`       | Name the two Turnstile values.                                                              |
 | `README.md`               | Document the configuration, the challenge, and the JavaScript requirement.                  |
 | `DESIGN.md`               | Update the requirements, sign-in flow, stack, email delivery, deployment, and known limits. |
 | `.plans/...`              | This plan and the prompts companion.                                                        |
 
 ## Deployment gate
 
-The implementation must not deploy until the production Worker has `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, and `TURNSTILE_HOSTNAMES`. A deploy without them would make the sign-in page return a server error.
+The implementation must not deploy until the production Worker has `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`. A deploy without them would make the sign-in page return a server error.
 
 ## Verification
 
@@ -114,5 +115,5 @@ The implementation must not deploy until the production Worker has `TURNSTILE_SI
 - The sign-in page requires JavaScript. A visitor without JavaScript cannot sign in.
 - Turnstile is a third-party dependency. A Cloudflare outage or a Siteverify failure blocks sign-in. The handler fails closed.
 - The token is single-use and expires after 300 seconds. A slow submit needs a new challenge.
-- The keys are not present. The change cannot deploy until the operator creates a Turnstile widget and sets all three values.
-- The hostname allowlist must match the widget domains. A hostname mismatch rejects the sign-in.
+- The keys are not present. The change cannot deploy until the operator creates a Turnstile widget and sets both values.
+- The hostname check uses the browser origin. A hostname mismatch rejects the sign-in.

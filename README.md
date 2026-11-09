@@ -56,7 +56,6 @@ Open the site using the same host as `PUBLIC_ORIGIN`. Session cookies are host-s
 | `SESSION_ENCRYPTION_KEY` | Encrypts the stateless session cookie. 32-byte base64url. Required. |
 | `TURNSTILE_SITE_KEY` | Public site key for the Cloudflare Turnstile widget. Required. |
 | `TURNSTILE_SECRET_KEY` | Server key for Turnstile token verification. Required. |
-| `TURNSTILE_HOSTNAMES` | Comma-separated hostnames accepted from Siteverify. Required. Production must not include local hostnames. |
 | `MAILGUN_SENDING_KEY` | Authenticates the Mailgun HTTP API. Required for sign-in email. |
 | `MAILGUN_DOMAIN` | Sending domain. Defaults to the domain part of `MAILGUN_LOGIN`. |
 | `MAILGUN_LOGIN` | Sender mailbox. The sender name is `Bevry Billing` unless `EMAIL_FROM` is set. |

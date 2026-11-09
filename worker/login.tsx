@@ -71,7 +71,16 @@ export async function handleLogin(
 	}
 
 	const turnstileToken = String(formData.get('cf-turnstile-response') || '')
-	if (!(await verifyTurnstile(env, turnstileToken, clientIp(request)))) {
+	const expectedHostname = new URL(getRequestOrigin(request, env.PUBLIC_ORIGIN))
+		.hostname
+	if (
+		!(await verifyTurnstile(
+			env,
+			turnstileToken,
+			expectedHostname,
+			clientIp(request)
+		))
+	) {
 		return sendReact(
 			LoginPageComponent({
 				email,
