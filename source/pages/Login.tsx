@@ -17,13 +17,12 @@ export default function LoginPageComponent({ email, next }: Props) {
 					</h2>
 					{email ? (
 						<p className="mt-2 text-sm font-medium	 text-green-600 dark:text-green-500 animate-pulse">
-							A magic email with a login link has been{' '}
-							<span className="font-medium">sent</span> to{' '}
+							An email has been <span className="font-medium">sent</span> to{' '}
 							<span className="font-mono">{email}</span>
 						</p>
 					) : (
 						<p className="mt-2 text-center text-sm text-gray-600">
-							A magic email with a login link will be sent to the email.
+							An email will be sent to the email address.
 						</p>
 					)}
 				</div>
@@ -69,7 +68,7 @@ export default function LoginPageComponent({ email, next }: Props) {
 									></path>
 								</svg>
 							</span>
-							Send {email ? 'another' : ''} magic email
+							Send {email ? 'another' : ''} email
 						</button>
 					</div>
 				</form>

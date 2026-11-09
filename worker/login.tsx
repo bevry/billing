@@ -65,7 +65,6 @@ export async function handleLogin(
 	const pending = await createPendingSession(
 		env.SESSION_ENCRYPTION_KEY,
 		entity?.id ?? '',
-		email,
 		next
 	)
 	const emailLimited = await isRateLimited(
@@ -74,22 +73,37 @@ export async function handleLogin(
 	)
 
 	if (!emailLimited) {
-		const magicLink = new URL(
-			`/authenticate/${pending.token}`,
-			getRequestOrigin(request, env.PUBLIC_ORIGIN)
-		)
-		if (next) magicLink.searchParams.set('next', next)
-		const name = entity?.contact.name || entity?.name
-		ctx.waitUntil(
-			sendEmail(env, {
+		let delivery: Promise<void>
+		if (entity) {
+			const magicLink = new URL(
+				`/authenticate/${pending.token}`,
+				getRequestOrigin(request, env.PUBLIC_ORIGIN)
+			)
+			if (next) magicLink.searchParams.set('next', next)
+			const name = entity.contact.name || entity.name
+			delivery = sendEmail(env, {
 				to: name ? `${name} <${email}>` : email,
 				subject: 'Magic link for Bevry Billing',
 				text:
 					'Sign in to Bevry Billing by opening this link:\n' +
 					magicLink.toString(),
-			}).catch(() => {
-				// Never log the link or the recipient. The user can request a new link.
-				console.error(JSON.stringify({ event: 'auth.link.failed' }))
+			})
+		} else {
+			delivery = sendEmail(env, {
+				to: email,
+				subject: 'Your login to billing.bevry.me',
+				text:
+					`Your email ${email} was recently used to try to login to:\n` +
+					'https://billing.bevry.me\n\n' +
+					'However, your email is not attached to any invoices in our system!\n\n' +
+					'Perhaps your invoices are attached to a different email, in which case, inform us via our existing communication channel as to your new email, such that we can update our system to attach your invoices to your new email.\n\n' +
+					'Do not reply to this email.',
+			})
+		}
+		ctx.waitUntil(
+			delivery.catch(() => {
+				// Never log the link or the recipient. The user can request a new email.
+				console.error(JSON.stringify({ event: 'auth.email.failed' }))
 			})
 		)
 	}

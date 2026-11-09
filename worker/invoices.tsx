@@ -18,7 +18,7 @@ async function renderInvoices(
 	request: Request,
 	env: Env,
 	session: SignedInSession,
-	options: { viewer: Entity | null; filterEntity: Entity | null }
+	options: { viewer: Entity; filterEntity: Entity | null }
 ): Promise<Response> {
 	const { viewer, filterEntity } = options
 	const database = getDatabase({
@@ -28,12 +28,10 @@ async function renderInvoices(
 
 	// An explicit filter for another entity must share at least one invoice.
 	// A filter for the viewer is allowed to be empty, exactly like `/invoices/`.
-	// A guest has no entity to filter.
 	if (
 		filterEntity &&
-		(!viewer ||
-			(filterEntity.id !== viewer.id &&
-				Object.keys(database.invoices).length === 0))
+		filterEntity.id !== viewer.id &&
+		Object.keys(database.invoices).length === 0
 	) {
 		return handleNotFound(request, session)
 	}
@@ -47,7 +45,6 @@ async function renderInvoices(
 	const page = InvoicesPageComponent({
 		database,
 		viewer,
-		viewerEmail: session.email,
 		...(filterEntity ? { filterEntity } : {}),
 		logoutFormToken: session.logoutFormToken,
 	})
@@ -73,15 +70,7 @@ export async function handleInvoicesRoot(
 	}
 
 	const viewer = getEntityById(session.entityId)
-	if (!viewer) {
-		if (session.entityId || !session.email) {
-			return handleNotFound(request, session)
-		}
-		return renderInvoices(request, env, session, {
-			viewer: null,
-			filterEntity: null,
-		})
-	}
+	if (!viewer) return handleNotFound(request, session)
 
 	return renderInvoices(request, env, session, { viewer, filterEntity: null })
 }

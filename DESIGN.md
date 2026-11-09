@@ -18,10 +18,10 @@ The data is real. The invoice, entity, payment method, service, and term records
 Functional:
 
 - A visitor signs in with an email address and a magic link.
-- A known email address receives a link. An unknown address also receives a link, and signs in to an empty list.
+- A known email address receives a link. An unknown address receives a notice and cannot sign in.
 - An entity can have one primary contact address and additional login addresses.
 - The link verifies the browser session that requested it.
-- A signed-in entity reads its own invoices only. A signed-in guest reads no invoices.
+- A signed-in entity reads its own invoices only.
 - The invoice list page lists unpaid and paid invoices, newest first, with a link to each invoice. It can be filtered to the invoices shared with another entity.
 - An invoice page shows the provider, the client, the project, the issued date, the due date, the amount, the payments, the item lines, the notes, and the payment methods for the invoice currency.
 - An invoice is a tax invoice by default, or a quote when its `type` is `quote`.
@@ -70,7 +70,6 @@ The cookie has two states:
 - `version`: the payload version.
 - `state`: `awaiting-email-link`.
 - `entityId`: the entity that requested the link, or an empty string.
-- `email`: the normalised address that requested the link.
 - `magicLinkTokenHash`: the SHA-256 hash of the token in the email link.
 - `createdAt`: when the link was requested.
 - `expiresAt`: one hour after `createdAt`.
@@ -80,13 +79,12 @@ The cookie has two states:
 
 - `version`: the payload version.
 - `state`: `signed-in`.
-- `entityId`: the signed-in entity, or an empty string for a guest.
-- `email`: the normalised signed-in address.
+- `entityId`: the signed-in entity.
 - `signedInAt`: the original sign-in time.
 - `expiresAt`: three days after the last authenticated request.
 - `logoutFormToken`: a random value rendered in the logout form.
 
-The cookie stores only the hash of the magic-link token, never the token. The token is in the email link and the confirmation form. The `email` field is optional, so an existing cookie without it stays valid when its entity resolves. A guest requires the field.
+The cookie stores only the hash of the magic-link token, never the token. The token is in the email link and the confirmation form. A signed-in session must name an entity. The signed-in check rejects an empty entity id, so a guest session from an earlier deploy is signed out.
 
 `source/lib/crypto.ts` uses AES-GCM 256 with a 32-byte key from `SESSION_ENCRYPTION_KEY`, a 12-byte random IV per encryption, and the context `billing:session:v1` as additional authenticated data. A missing or malformed key fails at request time.
 
@@ -99,7 +97,7 @@ The session is stateless. There is no session table and no server-side lookup. K
 `worker/index.ts` is the router. It sends `/` and `/login` to `worker/login.tsx`, `/authenticate/<token>` and `/authenticate` to `worker/authenticate.tsx`, `/logout` to `worker/logout.tsx`, `/invoices/` and `/invoices/<entityId>` to `worker/invoices.tsx`, and `/invoice/<invoiceId>` and `/invoices/<entityId>/invoice/<invoiceId>` to `worker/invoice.tsx`. It redirects `/invoices` to `/invoices/`. Every other request falls through to `env.ASSETS.fetch(request)`.
 
 - `GET /` and `GET /login` render the form. They do not create a cookie. A signed-in request redirects to the `next` path or `/invoices/`.
-- `POST /` and `POST /login` rate-limit the request, normalise the email, look up the entity, create the `awaiting-email-link` cookie, and send the link. Known and unknown addresses receive the same page and status. An unknown address still receives a link, then signs in as a guest. A safe `next` path is stored in the pending cookie and included in the magic link.
+- `POST /` and `POST /login` rate-limit the request, normalise the email, look up the entity, create the `awaiting-email-link` cookie, and send an email. Known and unknown addresses receive the same page and status. A known address receives the magic link. An unknown address receives a notice that it is not attached to any invoices, and cannot sign in. A safe `next` path is stored in the pending cookie and included in the magic link.
 - `GET /authenticate/<token>` decrypts the pending cookie, checks the token hash and expiry, and renders a confirmation page. It does not consume the link.
 - `POST /authenticate` repeats the checks and replaces the pending cookie with a `signed-in` cookie. It redirects to the stored `returnTo` path, or `/invoices/` with `303`.
 - `POST /logout` checks the `logoutFormToken` and clears the cookie with `Max-Age=0`. An optional safe `next` path sends the cleared session to `/login?next=...`.
@@ -113,6 +111,8 @@ The return path is a same-origin path under `/invoices`, `/invoice`, or the lega
 
 The magic link goes to the normalised address that submitted the form, not the primary contact address. An additional address therefore receives its own link.
 
+An unknown address receives a plain-text notice with the subject `Your login to billing.bevry.me`. The notice states that the address is not attached to any invoices and asks the reader to use the existing communication channel. It contains no link.
+
 The request endpoint returns the same check-inbox page for known and unknown emails. It sends the email through `ctx.waitUntil`, so the response time does not wait on Mailgun.
 
 The pending state expires after one hour. The signed-in state expires after three days of inactivity and is refreshed on activity. There is no absolute expiry.
@@ -122,13 +122,12 @@ The pending state expires after one hour. The signed-in state expires after thre
 Every app page reads the session and requires both conditions:
 
 - The cookie state is `signed-in`.
+- The session names an entity.
 - `expiresAt` is in the future.
 
 A request that fails either condition redirects to `/login?next=<current path>` with `303`. A signed-in request that reaches `/` or `/login` redirects to its `next` path or `/invoices/`.
 
 `/invoices/` is the default list. The session entity is its implicit filter, so there is no entity segment and no back arrow.
-
-A guest session has no entity id and no invoices. `/invoices/` renders an empty list with the address in the welcome line. `/invoices/<entityId>` and every invoice route return the `404` page, because a guest is not a party to any invoice.
 
 `/invoices/<entityId>` is an explicit filter. The entity must exist, and the list contains invoices where both the viewer and the filter entity are a party. A filter for the viewer’s own entity is allowed and shows the same invoices as `/invoices/`, but the explicit filter keeps the back arrow and the contextual invoice links. A filter for another entity is accepted only when it shares at least one invoice with the viewer; otherwise the response is the `404` page.
 
@@ -232,8 +231,6 @@ The invoice page renders sections in this order: title, provider, client, projec
 
 `layouts/Billing.tsx` renders the header above the article card. It holds the optional back arrow on the left and the sign-out form on the right. The sign-out form is a `POST` with the session’s `logoutFormToken`; it is not a link. The header is hidden in print. The `/invoices/` default list has no back arrow; every explicit `/invoices/<entityId>` list, including the viewer’s own, links back to `/invoices/`; an invoice opened through a filtered list links back to that list, while a canonical invoice links back to `/invoices/`.
 
-`pages/Invoices.tsx` renders the entity name and the invoice lists. A guest has no entity, so the page renders the normalised address and `you have no invoices.` without an empty-list section.
-
 `pages/NotFound.tsx` renders the signed-in `404` page. It uses the same message for an unknown entity, an unknown invoice, and an invoice the viewer may not read. It offers the own invoice list and a sign-out link that returns to the same path after a different account signs in.
 
 `Currency` uses `Intl.NumberFormat` with `en-US` and the currency code. A `gst` invoice shows a note that the amount includes the Australian Goods and Services Tax and renders a second amount equal to 10 percent of the total. The stored amount does not change.
@@ -256,7 +253,7 @@ The invoice page renders sections in this order: title, provider, client, projec
 
 The sending domain comes from `MAILGUN_DOMAIN`. When that is absent, it comes from the domain part of `MAILGUN_LOGIN`. The sender comes from `EMAIL_FROM`. When that is absent, it is `Bevry Billing <MAILGUN_LOGIN>`. The module throws a clear error when a required value is absent.
 
-The sign-in handler sends a plain-text message with the magic link to the address that submitted the form. Delivery runs in `ctx.waitUntil`, so the response does not wait on Mailgun. A delivery failure logs only `auth.link.failed`, with no token, link, or recipient. The user can request a new link.
+The sign-in handler sends a plain-text message to the address that submitted the form. A known address receives the magic link. An unknown address receives the notice instead. Delivery runs in `ctx.waitUntil`, so the response does not wait on Mailgun. A delivery failure logs only `auth.email.failed`, with no token, link, or recipient. The user can request a new email.
 
 SMTP credentials are not used. Cloudflare Workers send over HTTP, so the SMTP login and SMTP password have no role. The Mailgun sending key is the only mail credential the application reads.
 
@@ -300,7 +297,7 @@ The Custom Domain creates the DNS record, issues the certificate, and points all
 - There is no session inventory and no concurrent session limit.
 - The invoice page does not render the terms, and the database view does not render the unpaid total.
 - Email normalisation accepts an ASCII dot-atom subset. Quoted local parts, address literals, and internationalised addresses are rejected.
-- A guest session has no invoices and no entity filter.
+- The notice for an unknown address does not create a ticket or track a request. It only tells the reader to use the existing communication channel.
 - `sendRedirect` is unused.
 - Relative due dates use `daet` arithmetic. A due date remains a display value; no reminder or late-fee process reads it.
 - Currency conversion is not modelled. A payment can carry a different currency, and the page prints that payment's currency. The paid check requires one currency when it derives the state from payments.

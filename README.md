@@ -7,9 +7,8 @@ The invoice and contact records are real. They compile into the application from
 ## How it works
 
 - Cloudflare Workers serves the static assets and runs the app router in `worker/`.
-- The sign-in form normalises the email address and matches it to a known entity. A matching entity receives a magic link by email. An entity can have additional login addresses. An unknown address also receives a link, and signs in to an empty list.
+- The sign-in form normalises the email address and matches it to a known entity. A matching entity receives a magic link by email. An entity can have additional login addresses. An unknown address receives a notice email instead, and cannot sign in.
 - Known and unknown addresses receive the same check-inbox page and status. The request page does not reveal whether an address is known.
-- A guest sees its address and the message that it has no invoices.
 - The link opens a confirmation page in the browser that requested it. The signed-in session lasts three days without activity.
 - The link verifies the session in the same browser, then opens the invoice list or the page that was originally requested.
 - `/invoices/` is the signed-in entity's default list of unpaid and paid invoices. `/invoices/<entityId>` applies an explicit filter: your own entity shows the same list with a back arrow, and another entity shows the invoices you share with it.

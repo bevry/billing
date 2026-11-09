@@ -8,7 +8,6 @@ import {
 	hashToken,
 	randomToken,
 } from 'lib/crypto'
-import { normaliseEmail } from 'lib/email'
 
 export const SESSION_COOKIE_NAME = '__Host-billing-session'
 export const MAGIC_LINK_TTL_MS = 60 * 60 * 1000
@@ -22,7 +21,6 @@ export interface PendingSession {
 	version: 1
 	state: 'awaiting-email-link'
 	entityId: string
-	email?: string
 	magicLinkTokenHash: string
 	createdAt: number
 	expiresAt: number
@@ -33,7 +31,6 @@ export interface SignedInSession {
 	version: 1
 	state: 'signed-in'
 	entityId: string
-	email?: string
 	signedInAt: number
 	expiresAt: number
 	logoutFormToken: string
@@ -61,15 +58,13 @@ export function isPendingSession(
 export function isSignedInSession(
 	session: SessionState | null
 ): session is SignedInSession {
-	return session?.state === 'signed-in'
+	// A signed-in session must name an entity. This rejects the guest state
+	// from the previous deploy, which used an empty entity id.
+	return session?.state === 'signed-in' && Boolean(session.entityId)
 }
 
 function isFiniteTimestamp(value: unknown): value is number {
 	return typeof value === 'number' && Number.isFinite(value)
-}
-
-function isCanonicalEmail(value: unknown): value is string {
-	return typeof value === 'string' && normaliseEmail(value) === value
 }
 
 function isSessionState(value: unknown): value is SessionState {
@@ -77,7 +72,6 @@ function isSessionState(value: unknown): value is SessionState {
 	const data = value as Record<string, unknown>
 	if (data.version !== 1) return false
 	if (typeof data.entityId !== 'string') return false
-	if ('email' in data && !isCanonicalEmail(data.email)) return false
 	if (!isFiniteTimestamp(data.expiresAt)) return false
 	if (data.state === 'awaiting-email-link') {
 		return (
@@ -123,7 +117,6 @@ export async function readSession(
 export async function createPendingSession(
 	secret: string,
 	entityId: string,
-	email: string,
 	returnTo?: string
 ): Promise<IssuedPendingSession> {
 	const token = randomToken()
@@ -132,7 +125,6 @@ export async function createPendingSession(
 		version: 1,
 		state: 'awaiting-email-link',
 		entityId,
-		email,
 		magicLinkTokenHash: await hashToken(token),
 		createdAt: now,
 		expiresAt: now + MAGIC_LINK_TTL_MS,
@@ -147,15 +139,13 @@ export async function createPendingSession(
 
 export async function createSignedInSession(
 	secret: string,
-	entityId: string,
-	email: string
+	entityId: string
 ): Promise<IssuedSignedInSession> {
 	const now = Date.now()
 	const state: SignedInSession = {
 		version: 1,
 		state: 'signed-in',
 		entityId,
-		email,
 		signedInAt: now,
 		expiresAt: now + SESSION_IDLE_TTL_MS,
 		logoutFormToken: randomToken(),
