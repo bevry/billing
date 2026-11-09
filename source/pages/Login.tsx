@@ -1,9 +1,18 @@
 import TailwindLayoutComponent from 'layouts/Tailwind'
 export interface Props {
 	email?: string
+	sentTo?: string
+	error?: string
+	turnstileSiteKey: string
 	next?: string
 }
-export default function LoginPageComponent({ email, next }: Props) {
+export default function LoginPageComponent({
+	email,
+	sentTo,
+	error,
+	turnstileSiteKey,
+	next,
+}: Props) {
 	return (
 		<TailwindLayoutComponent
 			title="Sign in to Bevry Billing"
@@ -13,16 +22,21 @@ export default function LoginPageComponent({ email, next }: Props) {
 				<div>
 					{/*<img class="mx-auto h-48 w-auto" src="/banner.svg" alt="Bevry" />*/}
 					<h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
-						{email ? 'Check your inbox' : 'Sign in to your account'}
+						{sentTo ? 'Check your inbox' : 'Sign in to your account'}
 					</h2>
-					{email ? (
+					{sentTo ? (
 						<p className="mt-2 text-sm font-medium	 text-green-600 dark:text-green-500 animate-pulse">
 							An email has been <span className="font-medium">sent</span> to{' '}
-							<span className="font-mono">{email}</span>
+							<span className="font-mono">{sentTo}</span>
 						</p>
 					) : (
 						<p className="mt-2 text-center text-sm text-gray-600">
 							An email will be sent to the email address.
+						</p>
+					)}
+					{error && (
+						<p className="mt-2 text-center text-sm text-red-600" role="alert">
+							{error}
 						</p>
 					)}
 				</div>
@@ -39,12 +53,22 @@ export default function LoginPageComponent({ email, next }: Props) {
 								name="email"
 								type="email"
 								autoComplete="email"
-								defaultValue={email}
+								defaultValue={email ?? sentTo}
 								required
 								className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
 								placeholder="Email address"
 							/>
 						</div>
+					</div>
+
+					<div className="flex justify-center">
+						<div
+							className="cf-turnstile"
+							data-sitekey={turnstileSiteKey}
+							data-action="login"
+							data-theme="light"
+							data-size="normal"
+						></div>
 					</div>
 
 					<div>
@@ -68,10 +92,15 @@ export default function LoginPageComponent({ email, next }: Props) {
 									></path>
 								</svg>
 							</span>
-							Send {email ? 'another' : ''} email
+							{sentTo ? 'Send another email' : 'Send email'}
 						</button>
 					</div>
 				</form>
+				<script
+					src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+					async
+					defer
+				></script>
 			</div>
 		</TailwindLayoutComponent>
 	)

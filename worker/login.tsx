@@ -12,6 +12,7 @@ import { getEntity } from 'data/database'
 import { normaliseEmail } from 'lib/email'
 import { sendEmail } from 'lib/mailgun'
 import { hashToken } from 'lib/crypto'
+import { hasTurnstileConfig, verifyTurnstile } from 'lib/turnstile'
 import { clientIp, isRateLimited } from 'lib/rate-limit'
 import {
 	createPendingSession,
@@ -31,6 +32,11 @@ export async function handleLogin(
 		return sendError('invalid path', 404)
 	}
 
+	const siteKey = env.TURNSTILE_SITE_KEY
+	if (!siteKey || !hasTurnstileConfig(env)) {
+		return sendError('missing turnstile configuration', 500)
+	}
+
 	const queryNext = getSafeNextPath(url.searchParams.get('next'), '')
 	const session = await readSession(request, env.SESSION_ENCRYPTION_KEY)
 	if (isSignedInSession(session) && session.expiresAt > Date.now()) {
@@ -42,9 +48,12 @@ export async function handleLogin(
 	}
 
 	if (request.method !== 'POST') {
-		return sendReact(LoginPageComponent({ next: queryNext }), {
-			'Cache-Control': 'no-store',
-		})
+		return sendReact(
+			LoginPageComponent({ next: queryNext, turnstileSiteKey: siteKey }),
+			{
+				'Cache-Control': 'no-store',
+			}
+		)
 	}
 
 	const formData = await request.formData()
@@ -59,6 +68,21 @@ export async function handleLogin(
 		)
 	) {
 		return sendError('too many requests', 429)
+	}
+
+	const turnstileToken = String(formData.get('cf-turnstile-response') || '')
+	if (!(await verifyTurnstile(env, turnstileToken, clientIp(request)))) {
+		return sendReact(
+			LoginPageComponent({
+				email,
+				next,
+				error:
+					'The anti-bot check did not pass. Refresh the page and try again.',
+				turnstileSiteKey: siteKey,
+			}),
+			{ 'Cache-Control': 'no-store' },
+			403
+		)
 	}
 
 	const entity = getEntity(email)
@@ -108,8 +132,19 @@ export async function handleLogin(
 		)
 	}
 
-	return sendReact(LoginPageComponent({ email, next }), {
-		'Set-Cookie': getSessionCookie(pending.cookieValue, MAGIC_LINK_TTL_SECONDS),
-		'Cache-Control': 'no-store',
-	})
+	return sendReact(
+		LoginPageComponent({
+			email,
+			next,
+			sentTo: email,
+			turnstileSiteKey: siteKey,
+		}),
+		{
+			'Set-Cookie': getSessionCookie(
+				pending.cookieValue,
+				MAGIC_LINK_TTL_SECONDS
+			),
+			'Cache-Control': 'no-store',
+		}
+	)
 }

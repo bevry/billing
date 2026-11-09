@@ -1,10 +1,11 @@
 import type { MailgunEnv } from 'lib/mailgun'
+import type { TurnstileEnv } from 'lib/turnstile'
 
 export interface RateLimitBinding {
 	limit(options: { key: string }): Promise<{ success: boolean }>
 }
 
-export interface Env extends MailgunEnv {
+export interface Env extends MailgunEnv, TurnstileEnv {
 	SESSION_ENCRYPTION_KEY: string
 	PUBLIC_ORIGIN?: string
 	ASSETS: Fetcher

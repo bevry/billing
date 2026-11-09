@@ -27,7 +27,7 @@ Functional:
 - An invoice is a tax invoice by default, or a quote when its `type` is `quote`.
 - An unpaid invoice shows its payment options. A paid invoice shows its payment state. An overdue invoice shows an overdue warning.
 - The amount can include a Goods and Services Tax note when the invoice sets `gst`.
-- The pages work without client-side JavaScript.
+- The invoice pages work without client-side JavaScript. The sign-in page requires JavaScript for the Turnstile challenge.
 - The printed invoice is clean: navigation and page chrome are hidden, and the article uses the full page.
 
 Non-functional:
@@ -46,6 +46,7 @@ Non-functional:
 - Plain CSS in `public/index.css` for the invoice pages and the print layout.
 - `daet` 4 for date parsing, arithmetic, formatting, and comparison.
 - Web Crypto (AES-GCM) for the stateless session cookie.
+- Cloudflare Turnstile for the sign-in anti-bot challenge.
 - `wrangler` for local development and deployment.
 - Mailgun for email delivery, through its HTTP API.
 
@@ -97,7 +98,7 @@ The session is stateless. There is no session table and no server-side lookup. K
 `worker/index.ts` is the router. It sends `/` and `/login` to `worker/login.tsx`, `/authenticate/<token>` and `/authenticate` to `worker/authenticate.tsx`, `/logout` to `worker/logout.tsx`, `/invoices/` and `/invoices/<entityId>` to `worker/invoices.tsx`, and `/invoice/<invoiceId>` and `/invoices/<entityId>/invoice/<invoiceId>` to `worker/invoice.tsx`. It redirects `/invoices` to `/invoices/`. Every other request falls through to `env.ASSETS.fetch(request)`.
 
 - `GET /` and `GET /login` render the form. They do not create a cookie. A signed-in request redirects to the `next` path or `/invoices/`.
-- `POST /` and `POST /login` rate-limit the request, normalise the email, look up the entity, create the `awaiting-email-link` cookie, and send an email. Known and unknown addresses receive the same page and status. A known address receives the magic link. An unknown address receives a notice that it is not attached to any invoices, and cannot sign in. A safe `next` path is stored in the pending cookie and included in the magic link.
+- `POST /` and `POST /login` rate-limit the request, normalise the email, verify the Turnstile token, look up the entity, create the `awaiting-email-link` cookie, and send an email. Known and unknown addresses receive the same page and status. A known address receives the magic link. An unknown address receives a notice that it is not attached to any invoices, and cannot sign in. A safe `next` path is stored in the pending cookie and included in the magic link.
 - `GET /authenticate/<token>` decrypts the pending cookie, checks the token hash and expiry, and renders a confirmation page. It does not consume the link.
 - `POST /authenticate` repeats the checks and replaces the pending cookie with a `signed-in` cookie. It redirects to the stored `returnTo` path, or `/invoices/` with `303`.
 - `POST /logout` checks the `logoutFormToken` and clears the cookie with `Max-Age=0`. An optional safe `next` path sends the cleared session to `/login?next=...`.
@@ -112,6 +113,8 @@ The return path is a same-origin path under `/invoices`, `/invoice`, or the lega
 The magic link goes to the normalised address that submitted the form, not the primary contact address. An additional address therefore receives its own link.
 
 An unknown address receives a plain-text notice with the subject `Your login to billing.bevry.me`. The notice states that the address is not attached to any invoices and asks the reader to use the existing communication channel. It contains no link.
+
+The Turnstile token is checked with the Siteverify API before any email send. The handler rejects a missing, invalid, expired, or reused token with a `403` page and no pending cookie. The per-IP rate limit runs before the check, and the per-address rate limit runs after it. The handler fails closed when the configuration is missing or Siteverify is unavailable.
 
 The request endpoint returns the same check-inbox page for known and unknown emails. It sends the email through `ctx.waitUntil`, so the response time does not wait on Mailgun.
 
@@ -225,6 +228,8 @@ Two layouts share the same page shell:
 
 The Worker serves the app routes. All other requests go to the `ASSETS` binding, which serves `public/`. Workers serves a matching static asset before it invokes the Worker, so the CSS and SVG files never reach the router. The app routes have no matching asset, so the router handles them.
 
+`worker/index.ts` sets a Content-Security-Policy on app responses. The policy allows the Turnstile script and frame from `https://challenges.cloudflare.com`.
+
 `wrangler.jsonc` aliases `start-of-week` to its node export. `daet` 4 imports that package, and its browser export reads `window`, which Workers does not define.
 
 The invoice page renders sections in this order: title, provider, client, project details, invoice details, payment options, and item lines. Payment methods render as one table per currency and location. All fields other than `currency` and `location` render as rows. Terms render in the data view but not on the page. The provider and client names link to `/invoices/<entityId>`, which opens the filtered list for that entity.
@@ -253,7 +258,7 @@ The invoice page renders sections in this order: title, provider, client, projec
 
 The sending domain comes from `MAILGUN_DOMAIN`. When that is absent, it comes from the domain part of `MAILGUN_LOGIN`. The sender comes from `EMAIL_FROM`. When that is absent, it is `Bevry Billing <MAILGUN_LOGIN>`. The module throws a clear error when a required value is absent.
 
-The sign-in handler sends a plain-text message to the address that submitted the form. A known address receives the magic link. An unknown address receives the notice instead. Delivery runs in `ctx.waitUntil`, so the response does not wait on Mailgun. A delivery failure logs only `auth.email.failed`, with no token, link, or recipient. The user can request a new email.
+The sign-in handler verifies the Turnstile token before it sends either message. It sends a plain-text message to the address that submitted the form. A known address receives the magic link. An unknown address receives the notice instead. Delivery runs in `ctx.waitUntil`, so the response does not wait on Mailgun. A delivery failure logs only `auth.email.failed`, with no token, link, or recipient. The user can request a new email.
 
 SMTP credentials are not used. Cloudflare Workers send over HTTP, so the SMTP login and SMTP password have no role. The Mailgun sending key is the only mail credential the application reads.
 
@@ -276,11 +281,13 @@ Production values live as Worker secrets. Set them with `wrangler secret put` or
 Deployment checklist:
 
 1. Run `npm install`.
-2. Remove any existing DNS record for `billing.bevry.me`. The Custom Domain creates its own DNS record and certificate.
-3. Run `npm run deploy`.
-4. Set `SESSION_ENCRYPTION_KEY` and `MAILGUN_SENDING_KEY` with `wrangler secret put`.
-5. Set `MAILGUN_DOMAIN`, `MAILGUN_LOGIN`, `EMAIL_FROM`, or `MAILGUN_BASE_URL` when the defaults do not fit the account.
-6. Confirm the sending domain is verified in Mailgun and its DNS records are current.
+2. Create a Cloudflare Turnstile widget for `billing.bevry.me`.
+3. Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` with `wrangler secret put`.
+4. Remove any existing DNS record for `billing.bevry.me`. The Custom Domain creates its own DNS record and certificate.
+5. Run `npm run deploy`.
+6. Set `SESSION_ENCRYPTION_KEY` and `MAILGUN_SENDING_KEY` with `wrangler secret put`.
+7. Set `MAILGUN_DOMAIN`, `MAILGUN_LOGIN`, `EMAIL_FROM`, or `MAILGUN_BASE_URL` when the defaults do not fit the account.
+8. Confirm the sending domain is verified in Mailgun and its DNS records are current.
 
 The Worker serves `public/` through the `ASSETS` binding and handles the app routes in `worker/index.ts`. Workers serves a matching static asset before it invokes the Worker, so the assets do not consume Worker invocations. `workers_dev` stays enabled, so the Worker also answers on its workers.dev hostname.
 
@@ -298,6 +305,8 @@ The Custom Domain creates the DNS record, issues the certificate, and points all
 - The invoice page does not render the terms, and the database view does not render the unpaid total.
 - Email normalisation accepts an ASCII dot-atom subset. Quoted local parts, address literals, and internationalised addresses are rejected.
 - The notice for an unknown address does not create a ticket or track a request. It only tells the reader to use the existing communication channel.
+- The sign-in page requires JavaScript for Turnstile. A visitor without JavaScript cannot sign in.
+- Turnstile is a third-party dependency. A Siteverify failure blocks sign-in because the handler fails closed.
 - `sendRedirect` is unused.
 - Relative due dates use `daet` arithmetic. A due date remains a display value; no reminder or late-fee process reads it.
 - Currency conversion is not modelled. A payment can carry a different currency, and the page prints that payment's currency. The paid check requires one currency when it derives the state from payments.

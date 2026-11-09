@@ -46,7 +46,7 @@ function withSecurityHeaders(response: Response): Response {
 	const headers = new Headers(response.headers)
 	headers.set(
 		'Content-Security-Policy',
-		"default-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; style-src 'self'; script-src 'self'"
+		"default-src 'self'; base-uri 'none'; connect-src 'self' https://challenges.cloudflare.com; form-action 'self'; frame-ancestors 'none'; frame-src https://challenges.cloudflare.com; img-src 'self' data:; script-src 'self' https://challenges.cloudflare.com; style-src 'self'"
 	)
 	headers.set(
 		'Strict-Transport-Security',

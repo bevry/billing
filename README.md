@@ -8,13 +8,14 @@ The invoice and contact records are real. They compile into the application from
 
 - Cloudflare Workers serves the static assets and runs the app router in `worker/`.
 - The sign-in form normalises the email address and matches it to a known entity. A matching entity receives a magic link by email. An entity can have additional login addresses. An unknown address receives a notice email instead, and cannot sign in.
+- The sign-in form includes a Cloudflare Turnstile challenge. The server verifies the token before it sends any email. A failed challenge sends no email.
 - Known and unknown addresses receive the same check-inbox page and status. The request page does not reveal whether an address is known.
 - The link opens a confirmation page in the browser that requested it. The signed-in session lasts three days without activity.
 - The link verifies the session in the same browser, then opens the invoice list or the page that was originally requested.
 - `/invoices/` is the signed-in entity's default list of unpaid and paid invoices. `/invoices/<entityId>` applies an explicit filter: your own entity shows the same list with a back arrow, and another entity shows the invoices you share with it.
 - An invoice page shows the provider, the client, the project, the amount, the payments, the item lines, and the payment methods for the invoice currency. It can be opened as `/invoice/<invoiceId>`, or as `/invoices/<entityId>/invoice/<invoiceId>` to keep the filtered list as the back destination.
 - A signed-in user who cannot read the requested entity or invoice receives a styled `404` page with a sign-out option.
-- The pages render on the server with React. The browser receives HTML and CSS only.
+- The pages render on the server with React. The invoice pages receive HTML and CSS only. The sign-in page loads the Turnstile script for the challenge.
 - Invoice data has a small inheritance system. A child invoice can inherit fields from a parent, then override the fields that differ. The data module verifies the computed totals and the payment state.
 - Email delivery uses the Mailgun HTTP API.
 
@@ -22,6 +23,7 @@ The invoice and contact records are real. They compile into the application from
 
 - Node.js 22 or later and npm.
 - A Cloudflare account for deployment.
+- A Cloudflare Turnstile widget for sign-in.
 - A Mailgun sending key for sign-in email.
 
 ## Setup
@@ -36,7 +38,7 @@ npm start
 
 Open the site using the same host as `PUBLIC_ORIGIN`. Session cookies are host-scoped, so `localhost` and `127.0.0.1` are different sessions, and a magic link points at the configured origin.
 
-`wrangler dev` reads `.dev.vars`. The repository stores `.dev.vars` through strongbox, so a checkout with the strongbox filter provides the values. Without the filter, copy `.dev.vars.example` to `.dev.vars` and fill the values.
+`wrangler dev` reads `.dev.vars`. The repository stores `.dev.vars` through strongbox, so a checkout with the strongbox filter provides the values. Without the filter, copy `.dev.vars.example` to `.dev.vars` and fill the values. Use the Cloudflare test keys for local Turnstile development; they do not protect production.
 
 ## Commands
 
@@ -52,6 +54,8 @@ Open the site using the same host as `PUBLIC_ORIGIN`. Session cookies are host-s
 | Variable | Purpose |
 | --- | --- |
 | `SESSION_ENCRYPTION_KEY` | Encrypts the stateless session cookie. 32-byte base64url. Required. |
+| `TURNSTILE_SITE_KEY` | Public site key for the Cloudflare Turnstile widget. Required. |
+| `TURNSTILE_SECRET_KEY` | Server key for Turnstile token verification. Required. |
 | `MAILGUN_SENDING_KEY` | Authenticates the Mailgun HTTP API. Required for sign-in email. |
 | `MAILGUN_DOMAIN` | Sending domain. Defaults to the domain part of `MAILGUN_LOGIN`. |
 | `MAILGUN_LOGIN` | Sender mailbox. The sender name is `Bevry Billing` unless `EMAIL_FROM` is set. |
